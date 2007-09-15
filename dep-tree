@@ -12,8 +12,9 @@ set -e
 #        dep-tree [-s] <package name> <dependency>
 
 # In first case script produces a dot file for processing with 'dot'.
-# Examples: dep-tree <package> | dot -Tps | kghostview -
+# Examples: dep-tree <package> > <package>.dot
 #           dep-tree <package> | dot -Tpng -o <package>.png
+#           dep-tree <package> | dot -Tps | kghostview -
 # In second case it will list the dependency path(s) from the first
 # to the second package.
 # With the -s option "Suggests" are included as well.
@@ -23,6 +24,21 @@ set -e
 # - Suggests are not recursed; doing a full tree would lead to insane trees
 #   in almost all situations
 # - Conflicts are not recursed; what would be the point
+
+# TODO
+# - the dependency patch usage needs testing and update; concentrated on
+#   getting dependency tree (graph) correct
+# - add "usage" function and --version and --help options
+# - this code really needs a testsuite as regressions are many and subtle;
+#   comparing the .dot output with expected should be trivial if a fixed
+#   status database is used
+# - rewrite in e.g. C++; existing 'apt-cache dotty' code can be used as
+#   staring point
+# - automatic limiting
+# - automatically split graphs over multiple subgraphs (which dot will place
+#   on separate pages)
+
+### INITIALIZATION ###
 
 IFS_SV="$IFS"
 NL="
@@ -82,11 +98,31 @@ fi
 
 # Lists to limit processing:
 # - "skip" packages are completely ignored: nothing is displayed
-# - "end" packages are displayed and marked as such , but we don't recurse
+# - "end" packages are displayed and marked as such, but we don't recurse
 #   to determine their dependencies
 package_skip="libc6,libgcc1,libstdc++6,zlib1g,libx11-6"
-package_end="debconf,defoma,procmail,gnupg,ucf,x11-common,xbase-clients,xutils,xfonts-base,perl,kdelibs4c2a,libarts1c2a,libkdepim1a,libqt-rnt,libqt3-mt,libfam0,libfontconfig1,dbus,libgtk2.0-0,gconf2,pythoni-minimal,python2.4,fontconfig,kdebase-kio-plugins,kdepim-kio-plugins,kdesktop,kcontrol,kaddressbook,gcc,c-compiler,python,subversion,tla,git,git-core,mercurial,python,hyperestraier,xml-core"
 
+# Basic general packages
+package_end="gnupg,procmail"
+#Perl/Python
+package_end="$package_end,perl,python,python-minimal,python2.4"
+# Basic Debian packages & package management
+package_end="$package_end,debconf,ucf"
+# Development
+package_end="$package_end,gcc,c-compiler,subversion,tla,git,git-core,mercurial"
+# X-org
+package_end="$package_end,x11-common,xfonts-base,xbase-clients,xutils"
+# Common desktop
+package_end="$package_end,fontconfig,libfontconfig1,defoma,dbus,libfam0"
+# KDE
+package_end="$package_end,libqt-rnt,libqt3-mt,kdelibs4c2a,libarts1c2a,libkdepim1a,kdebase-kio-plugins,kdepim-kio-plugins,kdesktop,kcontrol,kaddressbook"
+# Gnome
+package_end="$package_end,libgtk2.0-0,gconf2"
+# Various
+package_end="$package_end,hyperestraier,xml-core"
+
+
+### FUNCTIONS ###
 
 check_list() {
 	local list
@@ -364,7 +400,8 @@ process_package() {
 	pinfo="$(prep_deps "$(grep_avail $package)")"
 
 	pseudo=$(get_deps "$pinfo" Provided-By)
-	if [ "$pseudo" ] && ! check_list done "$package"; then
+	if [ -z "$want_dep" ] && \
+	   [ "$pseudo" ] && ! check_list done "$package"; then
 		process_pseudo $package "$pseudo" "$predep_OR_name"
 	fi
 
