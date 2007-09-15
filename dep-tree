@@ -322,26 +322,30 @@ process_pseudo() {
 	local package=$1
 	local pseudo=$2
 	local predep_OR_name=$3
-	local prior_OR p_package
+	local prior_OR p_package p_pseudo
 
-	# Only print providing packages if there is only one
-	if ! echo "$pseudo" | grep -q ","; then
-		pseudo=${pseudo%% *}
-		#echo -e "\t\"$pseudo\" -> \"$package\" [color=green];"
-		echo -e "\t\"$package\" -> \"$pseudo\" [dir=back,arrowtail=inv,color=green];"
-	else
+	# Print a dummy providing package if there are multiple
+	if echo "$pseudo" | grep -q ","; then
 		if ! check_list OR_seen "$package"; then
 			prior_OR="$(echo "$OR_list" | \
-					  grep -E "(:|,)$dep_package(,|$)" | head -n1 | \
+					  grep -E "(:|,)$package(,|$)" | head -n1 | \
 					  cut -d: -f1)"
 		fi
 		p_package="${prior_OR:+\"$prior_OR\":}\"$package\""
-		#echo -e "\t\"Pr-$package\" [shape=circle,style=invis];"
 		echo -e "\t\"Pr-$package\" [shape=point];"
-		#echo -e "\t\"Pr-$package\" -> $p_package [color=green];"
 		echo -e "\t$p_package -> \"Pr-$package\" [dir=back,arrowtail=inv,color=green];"
+	else
+		pseudo=${pseudo%% *}
+		if ! check_list OR_seen "$pseudo"; then
+			prior_OR="$(echo "$OR_list" | \
+					  grep -E "(:|,)$pseudo(,|$)" | head -n1 | \
+					  cut -d: -f1)"
+		fi
+		p_pseudo="${prior_OR:+\"$prior_OR\":}\"$pseudo\""
+		echo -e "\t\"$package\" -> $p_pseudo [dir=back,arrowtail=inv,color=green];"
 	fi
-	# No idea how to show an alternative is a pseudo package
+
+	# How can pseudo package that are part of alternatives be identified?
 	if [ -z "$predep_OR_name" ] || check_list OR_seen "$package"; then
 		echo -e "\t\"$package\" [shape=octagon];"
 	fi
