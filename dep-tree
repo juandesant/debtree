@@ -1,0 +1,139 @@
+#! /bin/bash
+set -e
+
+# Usage: dep-tree [-s] <package name>
+#        dep-tree [-s] <package name> <dependency>
+
+# Script produces a dot file for processing with 'dot'
+# Example: dep-tree <package> | dot -Tps | kghostview -
+
+# TODO: display "OR" relations
+
+# WARNING: with suggests will lead to HUGE results in almost any case
+# Therefore limited to only one level
+with_suggests=""
+if [ "$1" = "-s" ]; then
+	with_suggests=1
+	shift
+fi
+
+requested_package=$1
+[ "$requested_package" ] || exit 1
+want_dep=$2
+
+package_done=","
+package_skip=",libc6,libgcc1,libstdc++6,zlib1g,libx11-6,"
+package_end=",debconf,defoma,procmail,gnupg,ucf,x11-common,xbase-clients,xutils,xfonts-base,perl,kdelibs4c2a,libarts1c2a,libkdepim1a,libqt-rnt,libqt3-mt,libfam0,libfontconfig1,dbus,libgtk2.0-0,gconf2,pythoni-minimal,python2.4,fontconfig,kdebase-kio-plugins,kdepim-kio-plugins,kdesktop,kcontrol,kaddressbook,"
+IFS_SV="$IFS"
+
+print_dot_header() {
+	echo "digraph $requested_package {"
+	echo -e "\trankdir=LR;"
+}
+print_dot_footer() {
+	echo "}"
+}
+
+print_dot() {
+	local opts=""
+	case $3 in
+	    P)	opts="${opts:+$opts,}color=red,style=red" ;;
+	    D)	opts="${opts:+$opts,}color=red" ;;
+	    R)	: ;;
+	    S)	opts="${opts:+$opts,}style=dotted" ;;
+	esac
+	[ -z "$4" ] || opts="${opts:+$opts,}label=\"$4\""
+	[ -z "opts" ] || opts=" [$opts]"
+
+	# Would be nice to suppress double lines for such packages
+	if echo "$package_end" | grep -q ",$2,"; then
+		echo -e "\t\"$2\" [shape = octagon];"
+	fi
+
+	echo -e "\t\"$1\" -> \"$2\"$opts;"
+}
+
+grep_avail() {
+	grep-aptavail -XP $1 -s $2 | sed "s/^[^:]*: //"
+}
+
+process_deps() {
+	local package=$1
+	local deps=$2
+	local dep_type=$3
+	local dep_tree_in=$4
+	local IFS dep dep_or dep_package
+	local OR_cnt=0
+
+	IFS=,
+	for dep in $deps; do
+		IFS="$IFS_SV"
+		if echo $dep | grep -q "|"; then
+			OR_cnt=$(($OR_cnt + 1))
+		fi
+		IFS="|"
+		for dep_or in $dep; do
+			local dep_tree=$dep_tree_in
+			IFS="$IFS_SV"
+			dep_or=${dep_or# }
+			if echo "$dep_or" | grep -q " "; then
+				dep_package=${dep_or%% *}
+				verdep=${dep_or#* }
+			else
+				dep_package=$dep_or
+				verdep=""
+			fi
+			
+			dep_tree="$dep_tree -> $dep_package ($dep_type)"
+
+			if [ -z "$want_dep" ]; then
+				if echo "$package_skip" | grep -q ",$dep_package,"; then
+					continue
+				fi
+				print_dot $package $dep_package $dep_type "$verdep"
+			elif [ "$dep_package" = "$want_dep" ]; then
+				echo "$dep_tree"
+				continue
+			fi
+
+			if echo "$package_done" | grep -q ",$dep_package," ||
+			   ([ -z "$want_dep" ] &&
+			    echo "$package_end" | grep -q ",$dep_package,"); then
+				:
+			else
+				# Recurse through dependencies
+				[ "$dep_type" = S ] || process_package $dep_package "$dep_tree"
+			fi
+
+			# Skip alternatives for now
+			break
+		done
+	done
+}
+
+process_package() {
+	local package=$1
+	local dep_tree="$2"
+	local deps
+
+	package_done="$package_done$package,"
+
+	# Grepping for pre-depends does not seem to work!
+	#deps=$(grep_avail $package PreDepends)
+	#process_deps $package "$deps" P "$dep_tree"
+
+	deps=$(grep_avail $package Depends)
+	process_deps $package "$deps" D "$dep_tree"
+
+	deps=$(grep_avail $package Recommends)
+	process_deps $package "$deps" R "$dep_tree"
+
+	if [ "$with_suggests" ]; then
+		deps=$(grep_avail $package Suggests)
+		process_deps $package "$deps" S "$dep_tree"
+	fi
+}
+
+[ "$want_dep" ] || print_dot_header
+process_package $requested_package "$requested_package"
+[ "$want_dep" ] || print_dot_footer
