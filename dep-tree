@@ -78,6 +78,7 @@ print_dot_header() {
 	echo "digraph \"$requested_package\" {"
 	[ "$do_rotate" ] || echo -e "\trankdir=LR;"
 	[ -z "$do_condense" ] || echo -e "\tconcentrate=true;"
+	echo -e "\tnode [shape=box];"
 }
 print_dot_footer() {
 	echo "}"
@@ -89,6 +90,9 @@ print_dot() {
 	local dep_type=$3
 	local verdep=$4
 	local opts=""
+
+	local p_package="${dep_OR:+\"$dep_OR\":}\"$package\""
+	local p_package_dep="${OR:+\"$OR\":}\"$package_dep\""
 
 	case $dep_type in
 	    P)	opts="${opts:+$opts,}color=purple,style=bold" ;;
@@ -106,14 +110,15 @@ print_dot() {
 	fi
 	[ -z "opts" ] || opts=" [$opts]"
 
-	# Would be nice to suppress double lines for such packages
-	if echo "$package_end" | grep -q ",$package_dep," &&
-	   ! echo "$package_done" | grep -q ",$package_dep,"; then
-		echo -e "\t\"$package_dep\" [shape = octagon];"
-		package_done="$package_done$package_dep,"
+	# How can end packages that are part of an OR be identified (color maybe)?
+	if [ -z "$dep_OR" ]; then
+		if echo "$package_end" | grep -q ",$package_dep," &&
+		   ! echo "$package_done" | grep -q ",$package_dep,"; then
+			echo -e "\t\"$package_dep\" [shape = octagon];"
+			package_done="$package_done$package_dep,"
+		fi
 	fi
-
-	echo -e "\t\"$package\" -> \"$package_dep\"$opts;"
+	echo -e "\t$p_package -> $p_package_dep$opts;"
 }
 
 grep_avail() {
@@ -143,15 +148,33 @@ process_deps() {
 	local deps=$2
 	local dep_type=$3
 	local dep_tree_in=$4
+	local dep_OR=$5
 	local IFS dep dep_or dep_package verdep
 	local OR_cnt=0
 
 	IFS=,
 	for dep in $deps; do
 		IFS="$IFS_SV"
+		local OR=""
 
-		if echo $dep | grep -q "|"; then
+		if [ -z "$want_dep" ] && echo $dep | grep -q "|"; then
 			OR_cnt=$(($OR_cnt + 1))
+			OR=alt$OR_cnt
+
+			echo -e "\t$OR ["
+			echo -e "\t\tshape = \"record\""
+			echo -en "\t\tlabel = \""
+			IFS="|"
+			first=""
+			for dep_or in $dep; do
+				IFS="$IFS_SV"
+
+				[ -z "$first" ] || echo -n " | "
+				dep_package=${dep_or%% *}
+				echo -n "<$dep_package> $dep_package"
+				first=1
+			done
+			echo -e "\"\n\t]"
 		fi
 
 		IFS="|"
@@ -185,12 +208,12 @@ process_deps() {
 				    S|C)
 					: ;;
 				    *)
-					process_package $dep_package "$dep_tree" ;;
+					process_package $dep_package "$dep_tree" "$OR";;
 				esac
 			fi
 
 			# Skip alternatives for now (TODO)
-			break
+			#break
 		done
 	done
 }
@@ -198,6 +221,7 @@ process_deps() {
 process_package() {
 	local package=$1
 	local dep_tree="$2"
+	local dep_OR="$3"
 	local pinfo deps 
 
 	package_done="$package_done$package,"
@@ -205,19 +229,19 @@ process_package() {
 	pinfo="$(prep_deps "$(grep_avail $package Pre-Depends)")"
 
 	deps=$(get_deps "$pinfo" Pre-Depends)
-	process_deps $package "$deps" P "$dep_tree"
+	process_deps $package "$deps" P "$dep_tree" "$dep_OR"
 
 	deps=$(get_deps "$pinfo" Depends)
-	process_deps $package "$deps" D "$dep_tree"
+	process_deps $package "$deps" D "$dep_tree" "$dep_OR"
 
 	if [ "$with_recommends" ]; then
 		deps=$(get_deps "$pinfo" Recommends)
-		process_deps $package "$deps" R "$dep_tree"
+		process_deps $package "$deps" R "$dep_tree" "$dep_OR"
 	fi
 
 	if [ "$with_suggests" ]; then
 		deps=$(get_deps "$pinfo" Suggests)
-		process_deps $package "$deps" S "$dep_tree"
+		process_deps $package "$deps" S "$dep_tree" "$dep_OR"
 	fi
 
 	# Eventually the option to include Conflicts should be handled in
@@ -239,6 +263,6 @@ process_package() {
 
 [ "$want_dep" ] || print_dot_header
 
-process_package $requested_package "$requested_package"
+process_package $requested_package "$requested_package" ""
 
 [ "$want_dep" ] || print_dot_footer
