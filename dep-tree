@@ -93,82 +93,6 @@ check_list() {
 	echo "$list" | grep -q "^$2$" || return $?
 }
 
-print_dot_header() {
-	echo "digraph \"$requested_package\" {"
-	[ "$do_rotate" ] || echo -e "\trankdir=LR;"
-	[ -z "$do_condense" ] || echo -e "\tconcentrate=true;"
-	echo -e "\tnode [shape=box];"
-}
-print_dot_footer() {
-	echo "}"
-}
-
-print_dot() {
-	local package=$1
-	local dep_package=$2
-	local dep_type=$3
-	local verdep=$4
-	local opts=""
-	local p_package p_dep_package prior_OR
-
-	# Second or later dependency in alternatives: skip unless versioned (see also below)
-	# TODO: make this work also if only some of the alternatives have versioned deps
-	if [ "$OR_name" ] && ([ -z "$with_versions" ] || [ -z "$verdep" ]) && \
-	   echo "$OR_list" | grep -Eq "$OR_name:.*,$dep_package(,|$)"; then
-		return
-	fi
-
-	case $dep_type in
-	    P)	opts="${opts:+$opts,}color=purple,style=bold" ;;
-	    D)	opts="${opts:+$opts,}color=blue" ;;
-	    R)	: ;;
-	    S)	opts="${opts:+$opts,}style=dotted" ;;
-	    C)	opts="${opts:+$opts,}color=red" ;;
-	esac
-
-	# Always include versions for versioned conflicts
-	if [ "$verdep" ]; then
-		if [ "$with_versions" ] || [ "$dep_type" = C ]; then
-			opts="${opts:+$opts,}label=\"$verdep\""
-		fi
-	fi
-	[ -z "opts" ] || opts=" [$opts]"
-
-
-	# How can end packages that are part of an OR be identified (color maybe)?
-	# For now, marked by using braces in the labels (see below)
-	if [ -z "$predep_OR_name" ]; then
-		if check_list end "$dep_package" &&
-		   ! check_list done "$dep_package"; then
-			echo -e "\t\"$dep_package\" [shape = octagon];"
-			package_done="$package_done$NL$dep_package"
-		fi
-	fi
-	p_package="${predep_OR_name:+\"$predep_OR_name\":}\"$package\""
-
-	if [ "$OR_name" ]; then
-		# Unless we show versioned dependencies, make the link to the alternatives
-		# to the group (see also above)
-		if [ -z "$with_versions" ] || [ -z "$verdep" ]; then
-			p_dep_package="\"$OR_name\""
-		else
-			p_dep_package="${OR_name:+\"$OR_name\":}\"$dep_package\""
-		fi
-	else
-		# Keep all dependencies on a package with the first alternative
-		# For now unless package was previously encountered separately,
-		# in which case we use square brackets in the labels (see below)
-		if ! check_list OR_seen "$dep_package"; then
-			prior_OR="$(echo "$OR_list" | \
-					  grep -E "(:|,)$dep_package(,|$)" | head -n1 | \
-					  cut -d: -f1)"
-		fi
-		p_dep_package="${prior_OR:+\"$prior_OR\":}\"$dep_package\""
-	fi
-
-	echo -e "\t$p_package -> $p_dep_package$opts;"
-}
-
 grep_avail() {
 	local pinfo
 	local fields="Package,Pre-Depends,Depends,Recommends,Suggests,Provides,Conflicts"
@@ -191,19 +115,124 @@ prep_deps() {
 	echo "$@" | sed "s:, :,:g;s: | :|:g;s:\([^) ]\)\(,\||\|$\):\1 \2:g"
 }
 
+print_dot_header() {
+	echo "digraph \"$requested_package\" {"
+	[ "$do_rotate" ] || echo -e "\trankdir=LR;"
+	[ -z "$do_condense" ] || echo -e "\tconcentrate=true;"
+	echo -e "\tnode [shape=box];"
+}
+print_dot_footer() {
+	echo "}"
+}
+
+print_dot_OR_header() {	
+	local OR_name="$1"
+
+	echo -e "\t$OR_name ["
+	echo -e "\t\tshape = \"record\""
+	echo -en "\t\tlabel = \""
+}
+print_dot_OR_footer() {
+	echo -e "\"\n\t]"
+}
+
+print_dot_OR_main() {
+	local dep_package="$1"
+	local first=$2
+
+	[ -z "$first" ] || echo -n " | "
+	# Mark packages previously encountered
+	if check_list skip "$dep_package"; then
+		echo -n "<$dep_package> ($dep_package)"
+	elif check_list end "$dep_package"; then
+		echo -n "<$dep_package> \{$dep_package\}"
+	elif check_list OR_seen "$dep_package"; then
+		echo -n "<$dep_package> [$dep_package]"
+	else
+		echo -n "<$dep_package> $dep_package"
+	fi
+}
+
+print_dot_dependency() {
+	local package=$1
+	local dep_package=$2
+	local dep_type=$3
+	local verdep=$4
+	local opts=""
+	local p_package p_dep_package prior_OR
+
+	# Second or later dependency in alternatives: skip unless versioned (see also below)
+	# TODO: make this work also if only some of the alternatives have versioned deps
+	if [ "$OR_name" ] && ([ -z "$with_versions" ] || [ -z "$verdep" ]) && \
+	   echo "$OR_list" | grep -Eq "$OR_name:.*,$dep_package(,|$)"; then
+		return
+	fi
+
+	case $dep_type in
+	    PD)	opts="${opts:+$opts,}color=purple,style=bold" ;;
+	    D)	opts="${opts:+$opts,}color=blue" ;;
+	    R)	: ;;
+	    S)	opts="${opts:+$opts,}style=dotted" ;;
+	    C)	opts="${opts:+$opts,}color=red" ;;
+	esac
+
+	# Always include versions for versioned conflicts
+	if [ "$verdep" ]; then
+		if [ "$with_versions" ] || [ "$dep_type" = C ]; then
+			opts="${opts:+$opts,}label=\"$verdep\""
+		fi
+	fi
+	[ -z "opts" ] || opts=" [$opts]"
+
+
+	# How can end packages that are part of an OR be identified (color maybe)?
+	# For now, marked by using braces in the labels (see print_dot_OR_main)
+	if [ -z "$predep_OR_name" ]; then
+		if check_list end "$dep_package" &&
+		   ! check_list done "$dep_package"; then
+			echo -e "\t\"$dep_package\" [shape = octagon];"
+			package_done="$package_done$NL$dep_package"
+		fi
+	fi
+	p_package="${predep_OR_name:+\"$predep_OR_name\":}\"$package\""
+
+	if [ "$OR_name" ]; then
+		# Unless we show versioned dependencies, make the link to the alternatives
+		# to the group (see also above)
+		if [ -z "$with_versions" ] || [ -z "$verdep" ]; then
+			p_dep_package="\"$OR_name\""
+		else
+			p_dep_package="${OR_name:+\"$OR_name\":}\"$dep_package\""
+		fi
+	else
+		# Keep all dependencies on a package with the first alternative
+		# For now unless package was previously encountered separately,
+		# in which case we use square brackets in the labels (print_dot_OR_main)
+		if ! check_list OR_seen "$dep_package"; then
+			prior_OR="$(echo "$OR_list" | \
+					  grep -E "(:|,)$dep_package(,|$)" | head -n1 | \
+					  cut -d: -f1)"
+		fi
+		p_dep_package="${prior_OR:+\"$prior_OR\":}\"$dep_package\""
+	fi
+
+	echo -e "\t$p_package -> $p_dep_package$opts;"
+}
+
 process_deps() {
 	local package=$1
 	local deps=$2
 	local dep_type=$3
 	local dep_tree_in=$4
 	local predep_OR_name=$5
-	local IFS dep dep_or dep_package verdep
+	local IFS dep dep_or dep_package verdep first
 
 	IFS=,
 	for dep in $deps; do
 		IFS="$IFS_SV"
-		local OR_name=""
+		local OR_name="" # global for called functions!
 
+		# Create alternative dependency "records" for dot graph
 		# TODO: search if we've encountered the same set of alternatives before
 		if [ -z "$want_dep" ] && [ "$with_alternatives" ] && \
 		   echo $dep | grep -q "|"; then
@@ -211,39 +240,27 @@ process_deps() {
 			OR_name=alt$OR_cnt
 
 			OR_list="$OR_list$OR_name:"
-			echo -e "\t$OR_name ["
-			echo -e "\t\tshape = \"record\""
-			echo -en "\t\tlabel = \""
+			print_dot_OR_header "$OR_name"
 			IFS="|"
 			first=""
 			for dep_or in $dep; do
 				IFS="$IFS_SV"
 
+				dep_package=${dep_or%% *}
+
 				# Have dependencies for this package already been processed?
-				if check_list OR_seen "$dep_package" && \
+				if ! check_list OR_seen "$dep_package" && \
 				   check_list done "$dep_package"; then
 					package_OR_seen="$package_OR_seen$NL$dep_package"
 				fi
 
-				dep_package=${dep_or%% *}
-
 				[ -z "$first" ] || OR_list="$OR_list,"
-				[ -z "$first" ] || echo -n " | "
 				OR_list="$OR_list$dep_package"
-				# Mark packages previously encountered
-				if check_list skip "$dep_package"; then
-					echo -n "<$dep_package> ($dep_package)"
-				elif check_list end "$dep_package"; then
-					echo -n "<$dep_package> \{$dep_package\}"
-				elif check_list OR_seen "$dep_package"; then
-					echo -n "<$dep_package> [$dep_package]"
-				else
-					echo -n "<$dep_package> $dep_package"
-				fi
+				print_dot_OR_main "$dep_package" "$first"
 				first=1
 			done
 			OR_list="$OR_list$NL"
-			echo -e "\"\n\t]"
+			print_dot_OR_footer
 		fi
 
 		IFS="|"
@@ -264,7 +281,7 @@ process_deps() {
 					# Skip only unversioned conflicts
 					continue
 				fi
-				print_dot $package $dep_package $dep_type "$verdep"
+				print_dot_dependency $package $dep_package $dep_type "$verdep"
 			elif [ "$dep_package" = "$want_dep" ]; then
 				echo "$dep_tree"
 				continue
@@ -301,7 +318,7 @@ process_package() {
 	pinfo="$(prep_deps "$(grep_avail $package Pre-Depends)")"
 
 	deps=$(get_deps "$pinfo" Pre-Depends)
-	process_deps $package "$deps" P "$dep_tree" "$predep_OR_name"
+	process_deps $package "$deps" PD "$dep_tree" "$predep_OR_name"
 
 	deps=$(get_deps "$pinfo" Depends)
 	process_deps $package "$deps" D "$dep_tree" "$predep_OR_name"
@@ -319,11 +336,12 @@ process_package() {
 	deps=$(get_deps "$pinfo" Conflicts)
 	process_deps $package "$deps" C "$dep_tree" "$predep_OR_name"
 
+	# TODO
 	#provides=$(get_deps "$pinfo" Provides)
 	#[ -z "$provides" ] || echo "$package provides: $provides" >&2
 }
 
-## MAINLINE
+### MAINLINE ###
 
 package_skip="$(echo $package_skip | sed "s/,/\n/g")"
 package_end="$(echo $package_end | sed "s/,/\n/g")"
