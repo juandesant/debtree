@@ -1,6 +1,13 @@
 #! /bin/bash
 set -e
 
+# dep-tree version 1.0.0
+# Copyright: Frans Pop <elendil@planet.nl>, 2007
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the Free
+# Software Foundation; either version 2 of the License, or (at your option)
+# any later version.
+
 # Usage: dep-tree [-s] <package name>
 #        dep-tree [-s] <package name> <dependency>
 
@@ -12,17 +19,22 @@ set -e
 # With the -s option "Suggests" are included as well.
 
 # TODO
-# - process/display alternatives ("OR" relations)
 # - distinguish meta/pseudo packages
-# - automatically end on packages with a Provides:
+# - automatically end on pseudo packages
+# - maybe packages with Provides in some cases?
 
 # NOTES
 # - Processing of suggests is limited to only one level; doing a full tree
 #   would lead to insane trees for almost any package
 
+IFS_SV="$IFS"
+NL="
+"
+
+with_alternatives=1
 with_suggests=""
 with_recommends=1
-with_conflicts=""
+with_vconflicts=""
 with_versions=1
 do_rotate=""
 do_condense=""
@@ -31,15 +43,17 @@ while true; do
 	case "$1" in
 	    "")
 		break ;;
+	    --no-alternatives)
+		with_alternatives="" ;;
 	    --no-recommends)
 		with_recommends="" ;;
 	    -S|--with-suggests)
 		with_suggests=1 ;;
-	    -C|--with-conflicts)
-		with_conflicts=1 ;;
+	    -VC|--versioned-conflicts)
+		with_vconflicts=1 ;;
 	    --no-versions)
 		with_versions="" ;;
-	    --rotate)
+	    -r|--rotate)
 		do_rotate="1" ;;
 	    --condense)
 		do_condense="1" ;;
@@ -69,10 +83,9 @@ if [ -z "$requested_package" ]; then
 	exit 1
 fi
 
-package_done=","
 package_skip=",libc6,libgcc1,libstdc++6,zlib1g,libx11-6,"
 package_end=",debconf,defoma,procmail,gnupg,ucf,x11-common,xbase-clients,xutils,xfonts-base,perl,kdelibs4c2a,libarts1c2a,libkdepim1a,libqt-rnt,libqt3-mt,libfam0,libfontconfig1,dbus,libgtk2.0-0,gconf2,pythoni-minimal,python2.4,fontconfig,kdebase-kio-plugins,kdepim-kio-plugins,kdesktop,kcontrol,kaddressbook,"
-IFS_SV="$IFS"
+
 
 print_dot_header() {
 	echo "digraph \"$requested_package\" {"
@@ -90,9 +103,14 @@ print_dot() {
 	local dep_type=$3
 	local verdep=$4
 	local opts=""
+	local p_package p_package_dep prior_OR
 
-	local p_package="${dep_OR:+\"$dep_OR\":}\"$package\""
-	local p_package_dep="${OR:+\"$OR\":}\"$package_dep\""
+	# Second or later dependency in alternatives: skip unless versioned (see also below)
+	# TODO: make this work also if only some of the alternatives have versioned deps
+	if [ "$OR_name" ] && ([ -z "$with_versions" ] || [ -z "$verdep" ]) && \
+	   echo "$OR_list" | grep -Eq "$OR_name:.*,$package_dep(,|$)"; then
+		return
+	fi
 
 	case $dep_type in
 	    P)	opts="${opts:+$opts,}color=purple,style=bold" ;;
@@ -110,14 +128,38 @@ print_dot() {
 	fi
 	[ -z "opts" ] || opts=" [$opts]"
 
+
 	# How can end packages that are part of an OR be identified (color maybe)?
-	if [ -z "$dep_OR" ]; then
+	# For now, marked by using braces in the labels (see below)
+	if [ -z "$predep_OR_name" ]; then
 		if echo "$package_end" | grep -q ",$package_dep," &&
 		   ! echo "$package_done" | grep -q ",$package_dep,"; then
 			echo -e "\t\"$package_dep\" [shape = octagon];"
 			package_done="$package_done$package_dep,"
 		fi
 	fi
+	p_package="${predep_OR_name:+\"$predep_OR_name\":}\"$package\""
+
+	if [ "$OR_name" ]; then
+		# Unless we show versioned dependencies, make the link to the alternatives
+		# to the group (see also above)
+		if [ -z "$with_versions" ] || [ -z "$verdep" ]; then
+			p_package_dep="\"$OR_name\""
+		else
+			p_package_dep="${OR_name:+\"$OR_name\":}\"$package_dep\""
+		fi
+	else
+		# Keep all dependencies on a package with the first alternative
+		# For now unless package was previously encountered separately,
+		# in which case we use square brackets in the labels (see below)
+		if ! echo "$package_OR_seen" | grep -q ",$package_dep,"; then
+			prior_OR="$(echo "$OR_list" | \
+					  grep -E "(:|,)$package_dep(,|$)" | head -n1 | \
+					  cut -d: -f1)"
+		fi
+		p_package_dep="${prior_OR:+\"$prior_OR\":}\"$package_dep\""
+	fi
+
 	echo -e "\t$p_package -> $p_package_dep$opts;"
 }
 
@@ -148,20 +190,22 @@ process_deps() {
 	local deps=$2
 	local dep_type=$3
 	local dep_tree_in=$4
-	local dep_OR=$5
+	local predep_OR_name=$5
 	local IFS dep dep_or dep_package verdep
-	local OR_cnt=0
 
 	IFS=,
 	for dep in $deps; do
 		IFS="$IFS_SV"
-		local OR=""
+		local OR_name=""
 
-		if [ -z "$want_dep" ] && echo $dep | grep -q "|"; then
+		# TODO: search if we've encountered the same set of alternatives before
+		if [ -z "$want_dep" ] && [ "$with_alternatives" ] && \
+		   echo $dep | grep -q "|"; then
 			OR_cnt=$(($OR_cnt + 1))
-			OR=alt$OR_cnt
+			OR_name=alt$OR_cnt
 
-			echo -e "\t$OR ["
+			OR_list="$OR_list$OR_name:"
+			echo -e "\t$OR_name ["
 			echo -e "\t\tshape = \"record\""
 			echo -en "\t\tlabel = \""
 			IFS="|"
@@ -169,11 +213,30 @@ process_deps() {
 			for dep_or in $dep; do
 				IFS="$IFS_SV"
 
-				[ -z "$first" ] || echo -n " | "
+				# Have dependencies for this package already been processed?
+				if echo "$package_OR_seen" | grep -q ",$dep_package," && \
+				   echo "$package_done" | grep -q ",$dep_package,"; then
+					package_OR_seen="$package_OR_seen$dep_package,"
+				fi
+
 				dep_package=${dep_or%% *}
-				echo -n "<$dep_package> $dep_package"
+
+				[ -z "$first" ] || OR_list="$OR_list,"
+				[ -z "$first" ] || echo -n " | "
+				OR_list="$OR_list$dep_package"
+				# Mark packages previously encountered
+				if echo "$package_skip" | grep -q ",$dep_package,"; then
+					echo -n "<$dep_package> ($dep_package)"
+				elif echo "$package_end" | grep -q ",$dep_package,"; then
+					echo -n "<$dep_package> \{$dep_package\}"
+				elif echo "$package_OR_seen" | grep -q ",$dep_package,"; then
+					echo -n "<$dep_package> [$dep_package]"
+				else
+					echo -n "<$dep_package> $dep_package"
+				fi
 				first=1
 			done
+			OR_list="$OR_list$NL"
 			echo -e "\"\n\t]"
 		fi
 
@@ -189,6 +252,10 @@ process_deps() {
 
 			if [ -z "$want_dep" ]; then
 				if echo "$package_skip" | grep -q ",$dep_package,"; then
+					continue
+				elif [ "$dep_type" = C ] && \
+				     [ -z "$with_vconflicts" ] && [ "$verdep" ]; then
+					# Skip only unversioned conflicts
 					continue
 				fi
 				print_dot $package $dep_package $dep_type "$verdep"
@@ -208,12 +275,11 @@ process_deps() {
 				    S|C)
 					: ;;
 				    *)
-					process_package $dep_package "$dep_tree" "$OR";;
+					process_package $dep_package "$dep_tree" "$OR_name";;
 				esac
 			fi
 
-			# Skip alternatives for now (TODO)
-			#break
+			[ "$with_alternatives" ] || break
 		done
 	done
 }
@@ -221,7 +287,7 @@ process_deps() {
 process_package() {
 	local package=$1
 	local dep_tree="$2"
-	local dep_OR="$3"
+	local predep_OR_name="$3"
 	local pinfo deps 
 
 	package_done="$package_done$package,"
@@ -229,31 +295,23 @@ process_package() {
 	pinfo="$(prep_deps "$(grep_avail $package Pre-Depends)")"
 
 	deps=$(get_deps "$pinfo" Pre-Depends)
-	process_deps $package "$deps" P "$dep_tree" "$dep_OR"
+	process_deps $package "$deps" P "$dep_tree" "$predep_OR_name"
 
 	deps=$(get_deps "$pinfo" Depends)
-	process_deps $package "$deps" D "$dep_tree" "$dep_OR"
+	process_deps $package "$deps" D "$dep_tree" "$predep_OR_name"
 
 	if [ "$with_recommends" ]; then
 		deps=$(get_deps "$pinfo" Recommends)
-		process_deps $package "$deps" R "$dep_tree" "$dep_OR"
+		process_deps $package "$deps" R "$dep_tree" "$predep_OR_name"
 	fi
 
 	if [ "$with_suggests" ]; then
 		deps=$(get_deps "$pinfo" Suggests)
-		process_deps $package "$deps" S "$dep_tree" "$dep_OR"
+		process_deps $package "$deps" S "$dep_tree" "$predep_OR_name"
 	fi
 
-	# Eventually the option to include Conflicts should be handled in
-	# process_deps() as we want to include conflicts if they affect
-	# alternative dependencies; example:
-	# apt-cache dotty debconf: debconf-i18n vs. debconf-english
-	#c=$(get_deps "$pinfo" Conflicts)
-	#[ -z "$c" ] || echo "$package conflicts: $c" >&2
-	if [ "$with_conflicts" ]; then
-		deps=$(get_deps "$pinfo" Conflicts)
-		process_deps $package "$deps" C "$dep_tree"
-	fi
+	deps=$(get_deps "$pinfo" Conflicts)
+	process_deps $package "$deps" C "$dep_tree" "$predep_OR_name"
 
 	#provides=$(get_deps "$pinfo" Provides)
 	#[ -z "$provides" ] || echo "$package provides: $provides" >&2
@@ -263,6 +321,10 @@ process_package() {
 
 [ "$want_dep" ] || print_dot_header
 
+package_done=","
+package_OR_seen=","
+OR_cnt=0
+OR_list=""
 process_package $requested_package "$requested_package" ""
 
 [ "$want_dep" ] || print_dot_footer
