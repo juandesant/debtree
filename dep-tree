@@ -1,7 +1,7 @@
 #! /bin/bash
 set -e
 
-# dep-tree version 1.0.0
+# dep-tree version 0.3.5
 # Copyright: Frans Pop <elendil@planet.nl>, 2007
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -18,14 +18,11 @@ set -e
 # to the second package.
 # With the -s option "Suggests" are included as well.
 
-# TODO
-# - distinguish meta/pseudo packages
-# - automatically end on pseudo packages
-# - maybe packages with Provides in some cases?
-
 # NOTES
-# - Processing of suggests is limited to only one level; doing a full tree
-#   would lead to insane trees for almost any package
+# - Output looks OK in big lines, but needs verification in detail
+# - Suggests are not recursed; doing a full tree would lead to insane trees
+#   in almost all situations
+# - Conflicts are not recursed; what would be the point
 
 IFS_SV="$IFS"
 NL="
@@ -83,8 +80,12 @@ if [ -z "$requested_package" ]; then
 	exit 1
 fi
 
+# Lists to limit processing:
+# - "skip" packages are completely ignored: nothing is displayed
+# - "end" packages are displayed and marked as such , but we don't recurse
+#   to determine their dependencies
 package_skip="libc6,libgcc1,libstdc++6,zlib1g,libx11-6"
-package_end="debconf,defoma,procmail,gnupg,ucf,x11-common,xbase-clients,xutils,xfonts-base,perl,kdelibs4c2a,libarts1c2a,libkdepim1a,libqt-rnt,libqt3-mt,libfam0,libfontconfig1,dbus,libgtk2.0-0,gconf2,pythoni-minimal,python2.4,fontconfig,kdebase-kio-plugins,kdepim-kio-plugins,kdesktop,kcontrol,kaddressbook"
+package_end="debconf,defoma,procmail,gnupg,ucf,x11-common,xbase-clients,xutils,xfonts-base,perl,kdelibs4c2a,libarts1c2a,libkdepim1a,libqt-rnt,libqt3-mt,libfam0,libfontconfig1,dbus,libgtk2.0-0,gconf2,pythoni-minimal,python2.4,fontconfig,kdebase-kio-plugins,kdepim-kio-plugins,kdesktop,kcontrol,kaddressbook,gcc,c-compiler,python,subversion,tla,git,git-core,mercurial,python,hyperestraier,xml-core"
 
 
 check_list() {
@@ -191,7 +192,7 @@ print_dot_dependency() {
 			opts="${opts:+$opts,}label=\"$verdep\""
 		fi
 	fi
-	[ -z "opts" ] || opts=" [$opts]"
+	[ -z "$opts" ] || opts=" [$opts]"
 
 
 	# How can "end" packages that are part of an OR be identified?
