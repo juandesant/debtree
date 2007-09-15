@@ -83,9 +83,15 @@ if [ -z "$requested_package" ]; then
 	exit 1
 fi
 
-package_skip=",libc6,libgcc1,libstdc++6,zlib1g,libx11-6,"
-package_end=",debconf,defoma,procmail,gnupg,ucf,x11-common,xbase-clients,xutils,xfonts-base,perl,kdelibs4c2a,libarts1c2a,libkdepim1a,libqt-rnt,libqt3-mt,libfam0,libfontconfig1,dbus,libgtk2.0-0,gconf2,pythoni-minimal,python2.4,fontconfig,kdebase-kio-plugins,kdepim-kio-plugins,kdesktop,kcontrol,kaddressbook,"
+package_skip="libc6,libgcc1,libstdc++6,zlib1g,libx11-6"
+package_end="debconf,defoma,procmail,gnupg,ucf,x11-common,xbase-clients,xutils,xfonts-base,perl,kdelibs4c2a,libarts1c2a,libkdepim1a,libqt-rnt,libqt3-mt,libfam0,libfontconfig1,dbus,libgtk2.0-0,gconf2,pythoni-minimal,python2.4,fontconfig,kdebase-kio-plugins,kdepim-kio-plugins,kdesktop,kcontrol,kaddressbook"
 
+
+check_list() {
+	local list
+	eval list="\$package_$1"
+	echo "$list" | grep -q "^$2$" || return $?
+}
 
 print_dot_header() {
 	echo "digraph \"$requested_package\" {"
@@ -99,16 +105,16 @@ print_dot_footer() {
 
 print_dot() {
 	local package=$1
-	local package_dep=$2
+	local dep_package=$2
 	local dep_type=$3
 	local verdep=$4
 	local opts=""
-	local p_package p_package_dep prior_OR
+	local p_package p_dep_package prior_OR
 
 	# Second or later dependency in alternatives: skip unless versioned (see also below)
 	# TODO: make this work also if only some of the alternatives have versioned deps
 	if [ "$OR_name" ] && ([ -z "$with_versions" ] || [ -z "$verdep" ]) && \
-	   echo "$OR_list" | grep -Eq "$OR_name:.*,$package_dep(,|$)"; then
+	   echo "$OR_list" | grep -Eq "$OR_name:.*,$dep_package(,|$)"; then
 		return
 	fi
 
@@ -132,10 +138,10 @@ print_dot() {
 	# How can end packages that are part of an OR be identified (color maybe)?
 	# For now, marked by using braces in the labels (see below)
 	if [ -z "$predep_OR_name" ]; then
-		if echo "$package_end" | grep -q ",$package_dep," &&
-		   ! echo "$package_done" | grep -q ",$package_dep,"; then
-			echo -e "\t\"$package_dep\" [shape = octagon];"
-			package_done="$package_done$package_dep,"
+		if check_list end "$dep_package" &&
+		   ! check_list done "$dep_package"; then
+			echo -e "\t\"$dep_package\" [shape = octagon];"
+			package_done="$package_done$NL$dep_package"
 		fi
 	fi
 	p_package="${predep_OR_name:+\"$predep_OR_name\":}\"$package\""
@@ -144,23 +150,23 @@ print_dot() {
 		# Unless we show versioned dependencies, make the link to the alternatives
 		# to the group (see also above)
 		if [ -z "$with_versions" ] || [ -z "$verdep" ]; then
-			p_package_dep="\"$OR_name\""
+			p_dep_package="\"$OR_name\""
 		else
-			p_package_dep="${OR_name:+\"$OR_name\":}\"$package_dep\""
+			p_dep_package="${OR_name:+\"$OR_name\":}\"$dep_package\""
 		fi
 	else
 		# Keep all dependencies on a package with the first alternative
 		# For now unless package was previously encountered separately,
 		# in which case we use square brackets in the labels (see below)
-		if ! echo "$package_OR_seen" | grep -q ",$package_dep,"; then
+		if ! check_list OR_seen "$dep_package"; then
 			prior_OR="$(echo "$OR_list" | \
-					  grep -E "(:|,)$package_dep(,|$)" | head -n1 | \
+					  grep -E "(:|,)$dep_package(,|$)" | head -n1 | \
 					  cut -d: -f1)"
 		fi
-		p_package_dep="${prior_OR:+\"$prior_OR\":}\"$package_dep\""
+		p_dep_package="${prior_OR:+\"$prior_OR\":}\"$dep_package\""
 	fi
 
-	echo -e "\t$p_package -> $p_package_dep$opts;"
+	echo -e "\t$p_package -> $p_dep_package$opts;"
 }
 
 grep_avail() {
@@ -214,9 +220,9 @@ process_deps() {
 				IFS="$IFS_SV"
 
 				# Have dependencies for this package already been processed?
-				if echo "$package_OR_seen" | grep -q ",$dep_package," && \
-				   echo "$package_done" | grep -q ",$dep_package,"; then
-					package_OR_seen="$package_OR_seen$dep_package,"
+				if check_list OR_seen "$dep_package" && \
+				   check_list done "$dep_package"; then
+					package_OR_seen="$package_OR_seen$NL$dep_package"
 				fi
 
 				dep_package=${dep_or%% *}
@@ -225,11 +231,11 @@ process_deps() {
 				[ -z "$first" ] || echo -n " | "
 				OR_list="$OR_list$dep_package"
 				# Mark packages previously encountered
-				if echo "$package_skip" | grep -q ",$dep_package,"; then
+				if check_list skip "$dep_package"; then
 					echo -n "<$dep_package> ($dep_package)"
-				elif echo "$package_end" | grep -q ",$dep_package,"; then
+				elif check_list end "$dep_package"; then
 					echo -n "<$dep_package> \{$dep_package\}"
-				elif echo "$package_OR_seen" | grep -q ",$dep_package,"; then
+				elif check_list OR_seen "$dep_package"; then
 					echo -n "<$dep_package> [$dep_package]"
 				else
 					echo -n "<$dep_package> $dep_package"
@@ -251,7 +257,7 @@ process_deps() {
 			dep_tree="$dep_tree -> $dep_package ($dep_type)"
 
 			if [ -z "$want_dep" ]; then
-				if echo "$package_skip" | grep -q ",$dep_package,"; then
+				if check_list skip "$dep_package"; then
 					continue
 				elif [ "$dep_type" = C ] && \
 				     [ -z "$with_vconflicts" ] && [ "$verdep" ]; then
@@ -264,9 +270,9 @@ process_deps() {
 				continue
 			fi
 
-			if echo "$package_done" | grep -q ",$dep_package," ||
+			if check_list done "$dep_package" ||
 			   ([ -z "$want_dep" ] &&
-			    echo "$package_end" | grep -q ",$dep_package,"); then
+			    check_list end "$dep_package"); then
 				:
 			else
 				# Recurse through dependencies, except for Suggests
@@ -290,7 +296,7 @@ process_package() {
 	local predep_OR_name="$3"
 	local pinfo deps 
 
-	package_done="$package_done$package,"
+	package_done="$package_done$NL$package"
 
 	pinfo="$(prep_deps "$(grep_avail $package Pre-Depends)")"
 
@@ -319,12 +325,15 @@ process_package() {
 
 ## MAINLINE
 
-[ "$want_dep" ] || print_dot_header
-
-package_done=","
-package_OR_seen=","
+package_skip="$(echo $package_skip | sed "s/,/\n/g")"
+package_end="$(echo $package_end | sed "s/,/\n/g")"
+package_done=""
+package_OR_seen=""
 OR_cnt=0
 OR_list=""
+
+[ "$want_dep" ] || print_dot_header
+
 process_package $requested_package "$requested_package" ""
 
 [ "$want_dep" ] || print_dot_footer
