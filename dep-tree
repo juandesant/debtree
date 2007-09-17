@@ -107,7 +107,7 @@ package_end="gnupg,procmail"
 #Perl/Python
 package_end="$package_end,perl,python,python-minimal,python2.4"
 # Basic Debian packages & package management
-package_end="$package_end,debconf,ucf"
+package_end="$package_end,apt,dpkg,aptitude,debconf,ucf"
 # Development
 package_end="$package_end,gcc,c-compiler,subversion,tla,git,git-core,mercurial"
 # X-org
@@ -119,16 +119,10 @@ package_end="$package_end,libqt-rnt,libqt3-mt,kdelibs4c2a,libarts1c2a,libkdepim1
 # Gnome
 package_end="$package_end,libgtk2.0-0,gconf2"
 # Various
-package_end="$package_end,hyperestraier,xml-core"
+package_end="$package_end,hyperestraier"
 
 
 ### FUNCTIONS ###
-
-check_list() {
-	local list
-	eval list="\$package_$1"
-	echo "$list" | grep -q "^$2$" || return $?
-}
 
 grep_avail() {
 	local pinfo pr_by
@@ -159,6 +153,20 @@ get_deps() {
 # - add space after package name if not versioned
 prep_deps() {
 	echo "$@" | sed "s:, :,:g;s: | :|:g;s:\([^) ]\)\(,\||\|$\):\1 \2:g"
+}
+
+check_list() {
+	local list
+	eval list="\$package_$1"
+	echo "$list" | grep -q "^$2$" || return $?
+}
+
+get_prior_OR_name () {
+	local package=$1
+	if ! check_list OR_seen "$package"; then
+		echo "$OR_list" | grep -E "(:|,)$package(,|$)" | \
+			head -n1 | cut -d: -f1
+	fi
 }
 
 print_dot_header() {
@@ -205,7 +213,7 @@ print_dot_dependency() {
 	local dep_type=$3
 	local verdep=$4
 	local opts=""
-	local p_package p_dep_package prior_OR
+	local p_package p_dep_package prior_OR_name
 
 	# Second or later dependency in alternatives: skip unless versioned (see also below)
 	# TODO: make this work also if only some of the alternatives have versioned deps
@@ -233,12 +241,10 @@ print_dot_dependency() {
 
 	# How can "end" packages that are part of an OR be identified?
 	# For now, marked by using braces in the labels (see print_dot_OR_main)
-	if [ -z "$OR_name" ]; then
-		if check_list end "$dep_package" &&
-		   ! check_list done "$dep_package"; then
-			echo -e "\t\"$dep_package\" [shape = diamond];"
-			package_done="$package_done$NL$dep_package"
-		fi
+	if check_list end "$dep_package" && \
+	   [ -z "$OR_name" ] && ! check_list done "$dep_package"; then
+		echo -e "\t\"$dep_package\" [shape = diamond];"
+		package_done="$package_done$NL$dep_package"
 	fi
 	p_package="${predep_OR_name:+\"$predep_OR_name\":}\"$package\""
 
@@ -254,12 +260,8 @@ print_dot_dependency() {
 		# Keep all dependencies on a package with the first alternative
 		# For now unless package was previously encountered separately,
 		# in which case we use square brackets in the labels (print_dot_OR_main)
-		if ! check_list OR_seen "$dep_package"; then
-			prior_OR="$(echo "$OR_list" | \
-					  grep -E "(:|,)$dep_package(,|$)" | head -n1 | \
-					  cut -d: -f1)"
-		fi
-		p_dep_package="${prior_OR:+\"$prior_OR\":}\"$dep_package\""
+		prior_OR_name="$(get_prior_OR_name $dep_package)"
+		p_dep_package="${prior_OR_name:+\"$prior_OR_name\":}\"$dep_package\""
 	fi
 
 	echo -e "\t$p_package -> $p_dep_package$opts;"
@@ -295,14 +297,15 @@ process_deps() {
 			if [ -z "$OR_name" ]; then
 				OR_cnt=$(($OR_cnt + 1))
 				OR_name=alt$OR_cnt
-				OR_list="$OR_list$OR_name:$OR_pkgs$NL"
 
 				first=""
 				print_dot_OR_header "$OR_name"
 				for dep_package in $(echo $OR_pkgs | sed "s/,/ /g"); do
-					# Have dependencies for this package already been processed?
-					if ! check_list OR_seen "$dep_package" && \
-					   check_list done "$dep_package"; then
+					# Has this dependency already been processed as
+					# a separate package?
+					if check_list done "$dep_package" && \
+					   ! echo "$OR_list" | grep -Eq "(:|,)$dep_package(,|$)" && \
+					   ! check_list OR_seen "$dep_package"; then
 						package_OR_seen="$package_OR_seen$NL$dep_package"
 					fi
 
@@ -310,6 +313,8 @@ process_deps() {
 					first=1
 				done
 				print_dot_OR_footer
+
+				OR_list="$OR_list$OR_name:$OR_pkgs$NL"
 			fi
 		fi
 
@@ -361,32 +366,41 @@ process_deps() {
 
 process_pseudo() {
 	local package=$1
-	local pseudo=$2
-	local predep_OR_name=$3
-	local prior_OR p_package p_pseudo
+	local providers=$2
+	local dep_tree=$3
+	local predep_OR_name=$4
+	local is_leaf="$5"
+	local prior_OR_name p_package p_provider
 
-	# Print a dummy providing package if there are multiple
-	if echo "$pseudo" | grep -q ","; then
-		if ! check_list OR_seen "$package"; then
-			prior_OR="$(echo "$OR_list" | \
-					  grep -E "(:|,)$package(,|$)" | head -n1 | \
-					  cut -d: -f1)"
-		fi
-		p_package="${prior_OR:+\"$prior_OR\":}\"$package\""
-		echo -e "\t\"Pr-$package\" [shape=point];"
+	p_package="${predep_OR_name:+\"$predep_OR_name\":}\"$package\""
+
+	# Print a dummy providing package if there are multiple; we could
+	# possibly loop and display alternatives if there are not too many
+	# alternative provides
+	if echo "$providers" | grep -q ","; then
 		echo -e "\t$p_package -> \"Pr-$package\" [dir=back,arrowtail=inv,color=green];"
+		echo -e "\t\"Pr-$package\" [shape=point];"
 	else
-		pseudo=${pseudo%% *}
-		if ! check_list OR_seen "$pseudo"; then
-			prior_OR="$(echo "$OR_list" | \
-					  grep -E "(:|,)$pseudo(,|$)" | head -n1 | \
-					  cut -d: -f1)"
+		provider=${providers%% *}
+
+		prior_OR_name="$(get_prior_OR_name $provider)"
+		p_provider="${prior_OR_name:+\"$prior_OR_name\":}\"$provider\""
+		echo -e "\t$p_package -> $p_provider [dir=back,arrowtail=inv,color=green];"
+
+		if check_list end "$provider" && \
+		   [ -z "$prior_OR_name" ] && ! check_list done "$provider"; then
+			echo -e "\t\"$provider\" [shape = diamond];"
+			package_done="$package_done$NL$provider"
 		fi
-		p_pseudo="${prior_OR:+\"$prior_OR\":}\"$pseudo\""
-		echo -e "\t\"$package\" -> $p_pseudo [dir=back,arrowtail=inv,color=green];"
+
+		# Recurse to get dependencies for providing package
+		dep_tree="$dep_tree <- $provider"
+		if ! check_list done "$provider" && [ -z "$is_leaf" ]; then
+			process_package $provider "$dep_tree" "" ""
+		fi
 	fi
 
-	# How can pseudo package that are part of alternatives be identified?
+	# Green arrow sufficiently identifies pseudo package that is part of alternatives
 	if [ -z "$predep_OR_name" ] || check_list OR_seen "$package"; then
 		echo -e "\t\"$package\" [shape=octagon];"
 	fi
@@ -397,19 +411,20 @@ process_package() {
 	local dep_tree="$2"
 	local predep_OR_name="$3"
 	local is_leaf="$4"
-	local pinfo deps 
+	local pinfo providers deps 
 
 	#echo "Debug: Processing $package ${is_leaf:+(leaf)}" >&2
 
 	pinfo="$(prep_deps "$(grep_avail $package)")"
 
-	pseudo=$(get_deps "$pinfo" Provided-By)
-	if [ -z "$want_dep" ] && \
-	   [ "$pseudo" ] && ! check_list done "$package"; then
-		process_pseudo $package "$pseudo" "$predep_OR_name"
+	package_done="$package_done$NL$package"
+
+	# Not sure if we should do this when determining dependency paths
+	providers=$(get_deps "$pinfo" Provided-By)
+	if [ -z "$want_dep" ] && [ "$providers" ]; then
+		process_pseudo $package "$providers" "$dep_tree" "$predep_OR_name" "$is_leaf"
 	fi
 
-	package_done="$package_done$NL$package"
 	[ -z "$is_leaf" ] || return 0
 
 	deps=$(get_deps "$pinfo" Pre-Depends)
@@ -438,7 +453,9 @@ process_package() {
 	# For packages we did not yet recurse through, check if they are pseudo packages
 	if [ -z "$dep_type" ]; then
 		for dep_package in $package_leaf; do
-			process_package $dep_package "" "" 1
+			if ! check_list done "$dep_package"; then
+				process_package $dep_package "" "" 1
+			fi
 		done
 	fi
 }
