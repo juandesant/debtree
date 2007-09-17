@@ -8,16 +8,16 @@ set -e
 # Software Foundation; either version 2 of the License, or (at your option)
 # any later version.
 
-# Usage: dep-tree [-s] <package name>
-#        dep-tree [-s] <package name> <dependency>
+# Usage: dep-tree [options] <package name>
+#        dep-tree [-S] <package name> <dependency>
 
 # In first case script produces a dot file for processing with 'dot'.
 # Examples: dep-tree <package> > <package>.dot
 #           dep-tree <package> | dot -Tpng -o <package>.png
 #           dep-tree <package> | dot -Tps | kghostview -
+#
 # In second case it will list the dependency path(s) from the first
 # to the second package.
-# With the -s option "Suggests" are included as well.
 
 # NOTES
 # - Output looks OK in big lines, but needs verification in detail
@@ -233,7 +233,7 @@ print_dot_dependency() {
 
 	# How can "end" packages that are part of an OR be identified?
 	# For now, marked by using braces in the labels (see print_dot_OR_main)
-	if [ -z "$predep_OR_name" ]; then
+	if [ -z "$OR_name" ]; then
 		if check_list end "$dep_package" &&
 		   ! check_list done "$dep_package"; then
 			echo -e "\t\"$dep_package\" [shape = diamond];"
@@ -271,7 +271,7 @@ process_deps() {
 	local dep_type=$3
 	local dep_tree_in=$4
 	local predep_OR_name=$5
-	local IFS dep dep_or dep_package verdep first
+	local IFS dep dep_or dep_package dep_tree verdep OR_pkgs first
 
 	IFS=,
 	for dep in $deps; do
@@ -279,40 +279,44 @@ process_deps() {
 		local OR_name="" # global for called functions!
 
 		# Create alternative dependency "records" for dot graph
-		# TODO: search if we've encountered the same set of alternatives before
 		if [ -z "$want_dep" ] && [ "$with_alternatives" ] && \
 		   echo $dep | grep -q "|"; then
-			OR_cnt=$(($OR_cnt + 1))
-			OR_name=alt$OR_cnt
-
-			OR_list="$OR_list$OR_name:"
-			print_dot_OR_header "$OR_name"
+			# Check if we already have these (exact) alternatives
+			OR_pkgs=""
 			IFS="|"
-			first=""
 			for dep_or in $dep; do
 				IFS="$IFS_SV"
 
 				dep_package=${dep_or%% *}
-
-				# Have dependencies for this package already been processed?
-				if ! check_list OR_seen "$dep_package" && \
-				   check_list done "$dep_package"; then
-					package_OR_seen="$package_OR_seen$NL$dep_package"
-				fi
-
-				[ -z "$first" ] || OR_list="$OR_list,"
-				OR_list="$OR_list$dep_package"
-				print_dot_OR_main "$dep_package" "$first"
-				first=1
+				OR_pkgs="${OR_pkgs:+$OR_pkgs,}$dep_package"
 			done
-			OR_list="$OR_list$NL"
-			print_dot_OR_footer
+
+			OR_name="$(echo "$OR_list" | grep ":$OR_pkgs$" | cut -d: -f1)"
+			if [ -z "$OR_name" ]; then
+				OR_cnt=$(($OR_cnt + 1))
+				OR_name=alt$OR_cnt
+				OR_list="$OR_list$OR_name:$OR_pkgs$NL"
+
+				first=""
+				print_dot_OR_header "$OR_name"
+				for dep_package in $(echo $OR_pkgs | sed "s/,/ /g"); do
+					# Have dependencies for this package already been processed?
+					if ! check_list OR_seen "$dep_package" && \
+					   check_list done "$dep_package"; then
+						package_OR_seen="$package_OR_seen$NL$dep_package"
+					fi
+
+					print_dot_OR_main "$dep_package" "$first"
+					first=1
+				done
+				print_dot_OR_footer
+			fi
 		fi
 
 		IFS="|"
 		for dep_or in $dep; do
 			IFS="$IFS_SV"
-			local dep_tree=$dep_tree_in
+			dep_tree=$dep_tree_in
 
 			dep_package=${dep_or%% *}
 			verdep=${dep_or#* }
