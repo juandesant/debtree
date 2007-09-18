@@ -72,7 +72,7 @@ while true; do
 	    --condense)
 		do_condense="1" ;;
 	    -*)
-		echo "unrecognized argument '$1'"
+		echo "unrecognized argument '$1'" >&2
 		exit 1
 		;;
 	    *)
@@ -81,7 +81,7 @@ while true; do
 		elif [ -z "$want_dep" ]; then
 			want_dep=$1
 		else
-			echo "Error: invalid number of arguments"
+			echo "Error: invalid number of arguments" >&2
 			exit 1
 		fi
 		;;
@@ -93,7 +93,7 @@ done
 [ "$with_recommends" ] || with_suggests=""
 
 if [ -z "$requested_package" ]; then
-	echo "Error: invalid number of arguments"
+	echo "Error: invalid number of arguments" >&2
 	exit 1
 fi
 
