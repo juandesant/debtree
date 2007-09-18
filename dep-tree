@@ -1,7 +1,7 @@
 #! /bin/bash
 set -e
 
-# dep-tree version 0.4.0
+# dep-tree version 0.4.1
 # Copyright: Frans Pop <elendil@planet.nl>, 2007
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -37,6 +37,7 @@ set -e
 # - automatic limiting
 # - automatically split graphs over multiple subgraphs (which dot will place
 #   on separate pages)
+# - Identify transitional packages
 
 ### INITIALIZATION ###
 
@@ -104,7 +105,7 @@ package_skip="libc6,libgcc1,libstdc++6,zlib1g,libx11-6"
 
 # Basic general packages
 package_end="gnupg,procmail"
-#Perl/Python
+# Perl/Python
 package_end="$package_end,perl,python,python-minimal,python2.4"
 # Basic Debian packages & package management
 package_end="$package_end,apt,dpkg,aptitude,debconf,ucf"
@@ -118,23 +119,26 @@ package_end="$package_end,fontconfig,libfontconfig1,defoma,dbus,libfam0"
 package_end="$package_end,libqt-rnt,libqt3-mt,kdelibs4c2a,libarts1c2a,libkdepim1a,kdebase-kio-plugins,kdepim-kio-plugins,kdesktop,kcontrol,kaddressbook"
 # Gnome
 package_end="$package_end,libgtk2.0-0,gconf2"
+# Tex
+package_end="$package_end,tetex-base,tex-common,texlive,texlive-base-bin,texlive-latex-recommended,texlive-latex-extra,texlive-fonts-recommended"
 # Various
-package_end="$package_end,hyperestraier"
+package_end="$package_end,gs-common,hyperestraier"
 
 
 ### FUNCTIONS ###
 
 grep_avail() {
+	local package=$1
 	local pinfo pr_by
 	local fields="Pre-Depends,Depends,Recommends,Suggests,Provides,Conflicts"
 
-	if pinfo="$(grep-available -XP $1 -s $fields)"; then
+	if pinfo="$(grep-available -XP $package -s $fields)"; then
 		:
-	elif pinfo="$(grep-aptavail -XP $1 -s $fields)"; then
+	elif pinfo="$(grep-aptavail -XP $package -s $fields)"; then
 		:
 	else
 		# Is this a pseudo package?
-		pr_by="$(echo $(grep-aptavail -n -F Provides -s Package --eregex "(^| )$1(,|$)") | \
+		pr_by="$(echo $(grep-aptavail -n -F Provides -s Package --eregex "(^| )$package(,|$)") | \
 			       sed "s/ /, /g")"
 		pinfo="Provided-By: $pr_by"
 	fi
@@ -238,14 +242,6 @@ print_dot_dependency() {
 	fi
 	[ -z "$opts" ] || opts=" [$opts]"
 
-
-	# How can "end" packages that are part of an OR be identified?
-	# For now, marked by using braces in the labels (see print_dot_OR_main)
-	if check_list end "$dep_package" && \
-	   [ -z "$OR_name" ] && ! check_list done "$dep_package"; then
-		echo -e "\t\"$dep_package\" [shape = diamond];"
-		package_done="$package_done$NL$dep_package"
-	fi
 	p_package="${predep_OR_name:+\"$predep_OR_name\":}\"$package\""
 
 	if [ "$OR_name" ]; then
@@ -265,6 +261,15 @@ print_dot_dependency() {
 	fi
 
 	echo -e "\t$p_package -> $p_dep_package$opts;"
+
+	# How can "end" packages that are part of an OR be identified?
+	# For now, marked by using braces in the labels (see print_dot_OR_main)
+	if check_list end "$dep_package" && \
+	   [ -z "$OR_name" ] && [ -z "$prior_OR_name" ] && \
+	   ! check_list done "$dep_package"; then
+		echo -e "\t\"$dep_package\" [shape = diamond];"
+		package_done="$package_done$NL$dep_package"
+	fi
 }
 
 process_deps() {
@@ -388,7 +393,8 @@ process_pseudo() {
 		echo -e "\t$p_package -> $p_provider [dir=back,arrowtail=inv,color=green];"
 
 		if check_list end "$provider" && \
-		   [ -z "$prior_OR_name" ] && ! check_list done "$provider"; then
+		   [ -z "$prior_OR_name" ] && \
+		   ! check_list done "$provider"; then
 			echo -e "\t\"$provider\" [shape = diamond];"
 			package_done="$package_done$NL$provider"
 		fi
