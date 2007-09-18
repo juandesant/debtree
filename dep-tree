@@ -104,17 +104,19 @@ fi
 package_skip="libc6,libgcc1,libstdc++6,zlib1g,libx11-6"
 
 # Basic general packages
-package_end="gnupg,procmail"
+package_end="sysvinit,passwd,gnupg,procmail,logrotate,gettext"
 # Perl/Python
 package_end="$package_end,perl,python,python-minimal,python2.4"
 # Basic Debian packages & package management
-package_end="$package_end,apt,dpkg,aptitude,debconf,ucf"
+package_end="$package_end,apt,dpkg,aptitude,debconf,cdebconf,ucf"
 # Development
 package_end="$package_end,gcc,c-compiler,subversion,tla,git,git-core,mercurial"
+# Common (complex) server applications
+package_end="$package_end,exim4,postfix,apache2,mysql-server,mysql-client,postgresql,postgresql-client"
 # X-org
 package_end="$package_end,x11-common,xfonts-base,xbase-clients,xutils"
 # Common desktop
-package_end="$package_end,fontconfig,libfontconfig1,defoma,dbus,libfam0"
+package_end="$package_end,fontconfig,libfontconfig1,defoma,dbus,libfam0,smbclient,libnotify1"
 # KDE
 package_end="$package_end,libqt-rnt,libqt3-mt,kdelibs4c2a,libarts1c2a,libkdepim1a,kdebase-kio-plugins,kdepim-kio-plugins,kdesktop,kcontrol,kaddressbook"
 # Gnome
@@ -122,7 +124,7 @@ package_end="$package_end,libgtk2.0-0,gconf2"
 # Tex
 package_end="$package_end,tetex-base,tex-common,texlive,texlive-base-bin,texlive-latex-recommended,texlive-latex-extra,texlive-fonts-recommended"
 # Various
-package_end="$package_end,gs-common,hyperestraier"
+package_end="$package_end,gs-common,gv,xpdf-reader,foomatic-filters,hyperestraier"
 
 
 ### FUNCTIONS ###
