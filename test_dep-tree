@@ -1,0 +1,37 @@
+#! /bin/bash
+set -e
+
+screen=""
+if [ "$1" = -s ]; then
+	screen=1
+	shift
+fi
+
+package=$1
+[ "$package" ] || exit 1
+
+out_basename=$package
+mkdir -p thumbs
+
+count=1
+for opt in "--no-versions --no-alternatives --no-recommends" \
+	   "--no-versions --no-alternatives" \
+	   "--no-versions --no-alternatives --with-suggests" \
+	   "--no-versions" \
+	   "" \
+	   "--with-suggests" \
+	   "--with-suggests --versioned-conflicts" \
+	   "--rotate"
+    do
+	if [ "$screen" ]; then
+		dep-tree $package $opt | dot -Tps | kghostview - &
+		sleep 10
+	else
+        	dep-tree $package $opt >$out_basename$count.dot
+		for format in ps png svg; do
+			dot -T$format -o "$out_basename$count.$format" $out_basename$count.dot
+		done
+		convert -thumbnail 400 $out_basename$count.svg thumbs/$out_basename$count.png
+	fi
+	count=$(($count + 1))
+done
