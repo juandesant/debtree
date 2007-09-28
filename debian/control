@@ -1,0 +1,13 @@
+Source: dep-tree
+Section: utils
+Priority: optional
+Maintainer: Frans Pop <elendil@planet.nl>
+Build-Depends: debhelper (>= 5)
+Standards-Version: 3.7.2
+
+Package: dep-tree
+Architecture: all
+Depends: ${misc:Depends}, dctrl-tools
+Recommends: graphviz
+Description: Generate package dependency graphs
+ <insert long description, indented with spaces>
