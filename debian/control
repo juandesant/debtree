@@ -4,10 +4,21 @@ Priority: optional
 Maintainer: Frans Pop <elendil@planet.nl>
 Build-Depends: debhelper (>= 5)
 Standards-Version: 3.7.2
+Homepage: http://alioth.debian.org/~fjp/debtree/
 
 Package: debtree
 Architecture: all
 Depends: ${misc:Depends}, dctrl-tools
 Recommends: graphviz
-Description: Generate package dependency graphs
- <insert long description, indented with spaces>
+Description: Show relationships between packages (.deb)
+ debtree has two functions:
+ * show the dependency path(s) between two packages
+ * create a dependency graph for a package
+ .
+ In the first case it shows through which dependencies a package pulls in
+ another package when it is installed.
+ .
+ In the second case it generates a dependency graph in the form of a .dot
+ file that can be used as input for the utility 'dot' from the graphviz
+ package. What information is included in a graph can be varied using
+ command line options.
