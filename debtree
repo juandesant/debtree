@@ -1,20 +1,20 @@
 #! /bin/bash
 set -e
 
-# dep-tree version 0.4.1
+# debtree version 0.5.0
 # Copyright: Frans Pop <elendil@planet.nl>, 2007
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
 # Software Foundation; either version 2 of the License, or (at your option)
 # any later version.
 
-# Usage: dep-tree [options] <package name>
-#        dep-tree [-S] <package name> <dependency>
+# Usage: debtree [options] <package name>
+#        debtree [-S] <package name> <dependency>
 
 # In first case script produces a dot file for processing with 'dot'.
-# Examples: dep-tree <package> > <package>.dot
-#           dep-tree <package> | dot -Tpng -o <package>.png
-#           dep-tree <package> | dot -Tps | kghostview -
+# Examples: debtree <package> > <package>.dot
+#           debtree <package> | dot -Tpng -o <package>.png
+#           debtree <package> | dot -Tps | kghostview -
 #
 # In second case it will list the dependency path(s) from the first
 # to the second package.

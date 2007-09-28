@@ -1,11 +1,11 @@
-Source: dep-tree
+Source: debtree
 Section: utils
 Priority: optional
 Maintainer: Frans Pop <elendil@planet.nl>
 Build-Depends: debhelper (>= 5)
 Standards-Version: 3.7.2
 
-Package: dep-tree
+Package: debtree
 Architecture: all
 Depends: ${misc:Depends}, dctrl-tools
 Recommends: graphviz

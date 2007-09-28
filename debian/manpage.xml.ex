@@ -37,7 +37,7 @@ and docbook-xsl in your Build-Depends control field.
   <!ENTITY dhemail     "<email>fjp@debian.org</email>">
   <!ENTITY dhusername  "Frans Pop">
   <!ENTITY dhucpackage "<refentrytitle>DEP-TREE</refentrytitle>">
-  <!ENTITY dhpackage   "dep-tree">
+  <!ENTITY dhpackage   "debtree">
 
   <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">

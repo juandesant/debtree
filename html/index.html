@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<title>dep-tree - Package dependency graphs</title>
+<title>debtree - Package dependency graphs</title>
 </head>
 
 <body>
-<h1>dep-tree &mdash; package dependency graphs on steroids</h1>
+<h1>debtree &mdash; package dependency graphs on steroids</h1>
 
 <table>
 <tbody valign="top">
@@ -35,14 +35,14 @@ can also generate dependency graphs in the form of <tt>.dot</tt> files that
 serve as input for <tt>dot</tt> (from the <tt>graphviz</tt> package).
 </p><p>
 The command <tt>apt-cache</tt> already has a similar option, but
-<tt>dep-tree</tt> is a lot more powerful.
+<tt>debtree</tt> is a lot more powerful.
 </p>
 
 <h3 id="examples">Examples</h3>
 
 <p>
 The examples below show the different levels of detail that can be
-obtained using <tt>dep-tree</tt> and explain the graphs. Please view
+obtained using <tt>debtree</tt> and explain the graphs. Please view
 them in the indicated order.
 </p><p>
 Note that Postscript viewers may not display some of the larger graphs until
@@ -72,7 +72,7 @@ not to expand the graph any further.
 <h2 id="download">Download</h2>
 
 <p>
-The <tt>dep-tree</tt> script can be <a href="dep-tree">downloaded</a>.
+The <tt>debtree</tt> script can be <a href="debtree">downloaded</a>.
 It is of course free software (GPL).
 </p><p>
 Its only dependency is <tt>dctrl-tools</tt>; <tt>graphviz</tt> is recommended.
@@ -82,7 +82,7 @@ Its only dependency is <tt>dctrl-tools</tt>; <tt>graphviz</tt> is recommended.
 
 <ul>
 <li>
-As <tt>dep-tree</tt> is currently written in <tt>bash</tt> and does individual
+As <tt>debtree</tt> is currently written in <tt>bash</tt> and does individual
 calls to the <tt>dctrl-tools</tt> utilities, it is not terribly fast. But then
 again, it is not terribly slow either.
 </li><li>
@@ -121,13 +121,13 @@ Comments, bugs and patches to: Frans&nbsp;Pop&nbsp;&lt;elendil&nbsp;AT&nbsp;plan
 <td width="500">
 
 <pre>
-dep-tree dpkg
+debtree dpkg
 </pre>
 <hr />
 <img src="thumbs/dpkg.png" alt="Dependency graph for dpkg" />
 <hr />
 <pre>
-$ dep-tree dpkg libsepol1
+$ debtree dpkg libsepol1
 dpkg -> coreutils (PD) -> libselinux1 (PD) -> libsepol1 (D)
 </pre>
 <hr />
@@ -139,13 +139,13 @@ dpkg -> coreutils (PD) -> libselinux1 (PD) -> libsepol1 (D)
 </p>
 <ul>
 <li><b>Show the dependency path between two packages</b><br />
-<tt>$ dep-tree &lt;package1&gt; &lt;package2&gt;</tt></li>
+<tt>$ debtree &lt;package1&gt; &lt;package2&gt;</tt></li>
 <li><b>Create a <tt>.dot</tt> file</b><br />
-<tt>$ dep-tree --with-suggests &lt;package&gt; &gt;out.dot</tt></li>
+<tt>$ debtree --with-suggests &lt;package&gt; &gt;out.dot</tt></li>
 <li><b>Create a graph (PNG) from a <tt>.dot</tt> file</b><br />
 <tt>$ dot -T png -o out.png out.dot</tt></li>
 <li><b>Create a graph (Postscript) and view it using <tt>kghostview</tt></b><br />
-<tt>$ dep-tree &lt;package&gt; | dot -Tps | kghostview - &amp;</tt></li>
+<tt>$ debtree &lt;package&gt; | dot -Tps | kghostview - &amp;</tt></li>
 </ul>
 
 <p>
