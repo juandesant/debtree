@@ -390,6 +390,11 @@ process_pseudo() {
 	local is_leaf="$5"
 	local prior_OR_name p_package p_provider
 
+	# For leaf packages we need to check if it was an alternative
+	if [ "$is_leaf" ]; then
+		predep_OR_name="$(get_prior_OR_name $package)"
+	fi
+
 	p_package="${predep_OR_name:+\"$predep_OR_name\":}\"$package\""
 
 	# Print a dummy providing package if there are multiple; we could
