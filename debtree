@@ -41,7 +41,7 @@ set -e
 # - indicate packages for which no info at all could be found; this is relevant
 #   for example when creating build dependency graphs for other arches
 
-if ! which grep-available grep-aptavail grep-dctrl >/dev/null 2>&1; then
+if ! which grep-available grep-aptavail >/dev/null 2>&1; then
 	echo "Missing dependency: please install dctrl-tools" >&2
 	exit 1
 fi
@@ -51,8 +51,6 @@ fi
 IFS_SV="$IFS"
 NL="
 "
-
-SOURCES_FILE="/var/lib/apt/lists/ftp.nl.debian.org_debian_dists_lenny_main_source_Sources"
 
 build_dep=""
 with_alternatives=1
@@ -186,10 +184,9 @@ get_deps() {
 
 grep_source() {
 	local package=$1
-	local pinfo pr_by
-	local fields="Build-Depends,Build-Depends-Indep"
+	local pinfo
 
-	pinfo="$(grep-dctrl -XP $package -s $fields $SOURCES_FILE)"
+	pinfo="$(apt-cache showsrc $package | grep -E "^Build-Depends(-Indep)?:")"
 
 	[ "$pinfo" ] || echo "Warning: no build dependency info found about '$package'" >&2
 	echo "$pinfo"
