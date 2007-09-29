@@ -37,7 +37,9 @@ set -e
 # - automatic limiting
 # - automatically split graphs over multiple subgraphs (which dot will place
 #   on separate pages)
-# - Identify transitional packages
+# - identify transitional packages
+# - indicate packages for which no info at all could be found; this is relevant
+#   for example when creating build dependency graphs for other arches
 
 if ! which grep-available grep-aptavail >/dev/null 2>&1; then
 	echo "Missing dependency: please install dctrl-tools" >&2
@@ -62,13 +64,14 @@ no_skip=""
 show_all=""
 do_rotate=""
 do_condense=""
+ARCH="$(dpkg --print-architecture)"
 
 while true; do
 	case "$1" in
 	    "")
 		break ;;
 	    -b|--build-dep)
-		build_dep="1" ;;
+		build_dep=1 ;;
 	    --no-alternatives)
 		with_alternatives="" ;;
 	    --no-recommends)
@@ -84,9 +87,15 @@ while true; do
 	    --no-versions)
 		with_versions="" ;;
 	    -r|--rotate)
-		do_rotate="1" ;;
+		do_rotate=1 ;;
 	    --condense)
-		do_condense="1" ;;
+		do_condense=1 ;;
+	    --arch=*)
+		ARCH=${1#*=}
+		if [ "$ARCH" = all ]; then
+			ARCH=""
+		fi
+		;;
 	    -*)
 		echo "unrecognized argument '$1'" >&2
 		exit 1
@@ -190,15 +199,47 @@ grep_source() {
 # Convert dependency string a bit for easier parsing:
 # - remove space after ","
 # - remove space before and after "|"
-# - add space after package name if not versioned
+# - add space after package name if not versioned and no arch conditions
 prep_deps() {
-	echo "$@" | sed "s:, :,:g;s: | :|:g;s:\([^) ]\)\(,\||\|$\):\1 \2:g"
+	 echo "$@" | sed "s:, :,:g;s: | :|:g;s:\([^]) ]\)\(,\||\|$\):\1 \2:g"
 }
 
 check_list() {
 	local list
 	eval list="\$package_$1"
 	echo "$list" | grep -q "^$2$" || return $?
+}
+
+# For build dependencies, check if there are architecture conditions
+# Any versioned dependency is echo'ed back
+# The checkis done only if an architecture is specified; if not, the arch
+# condition is also echo'ed back and displayed in the graph
+check_arch() {
+	local dep_type="$1"
+	local pkgdep="$2"
+
+	if [ -z "$ARCH" ] ||
+	   ([ "$dep_type" != B ] && [ "$dep_type" != BI ]); then
+		# Echo back full dependency
+		echo "$pkgdep"
+		return 0
+	else
+		# Echo back versioned dependency
+		echo "$(echo $pkgdep | sed "s/ *\[.*\] *//")"
+
+		archdep="$(echo $pkgdep | sed "s/ *(.*) *//")"
+		if [ -z "$archdep" ]; then
+			return 0	# no arch condition
+		elif echo "$archdep" | grep -q "!$ARCH[] ]"; then
+			return 1	# arch excluded
+		elif echo "$archdep" | grep -q "!"; then
+			return 0	# there are exclusions (not including arch)
+		elif echo "$archdep" | grep -q "[[ ]$ARCH[] ]"; then
+			return 0	# arch included
+		else
+			return 1	# arch not included
+		fi
+	fi
 }
 
 get_prior_OR_name () {
@@ -367,7 +408,12 @@ process_deps() {
 			dep_tree=$dep_tree_in
 
 			dep_package=${dep_or%% *}
-			verdep=${dep_or#* }
+			# Check for arch-conditioned build-dependencies
+			# Note: for build dependencies verdep can include arch-conditions
+			if ! verdep=$(check_arch $dep_type "${dep_or#* }"); then
+				echo "Info: Build dependency ($dep_type) on '$dep_package' not for $ARCH" >&2
+				continue
+			fi
 
 			dep_tree="$dep_tree -> $dep_package ($dep_type)"
 
