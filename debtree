@@ -52,6 +52,7 @@ IFS_SV="$IFS"
 NL="
 "
 
+verbose=1
 build_dep=""
 with_alternatives=1
 with_suggests=""
@@ -94,6 +95,10 @@ while true; do
 			ARCH=""
 		fi
 		;;
+	    -q|--quiet)
+		verbose=0 ;;
+	    -v|--verbose)
+		[ $verbose -eq 0 ] || verbose=$(($verbose + 1)) ;;
 	    -*)
 		echo "unrecognized argument '$1'" >&2
 		exit 1
@@ -117,8 +122,11 @@ done
 
 # Build-dep implies no-suggests and no-alternatives (recommends are optional)
 if [ "$build_dep" ]; then
+	ptype=S
 	with_suggests=""
 	with_alternatives=""
+else
+	ptype=B
 fi
 
 if [ -z "$requested_package" ]; then
@@ -160,36 +168,42 @@ package_end="$package_end,gs-common,gv,xpdf-reader,foomatic-filters,hyperestraie
 
 grep_avail() {
 	local package=$1
-	local pinfo pr_by
 	local fields="Pre-Depends,Depends,Recommends,Suggests,Provides,Conflicts"
+	local pinfo pr_by
+	local RET=1
 
 	if pinfo="$(grep-available -XP $package -s $fields)"; then
-		:
+		RET=0
 	elif pinfo="$(grep-aptavail -XP $package -s $fields)"; then
-		:
+		RET=0
 	else
 		# Is this a pseudo package?
 		pr_by="$(echo $(grep-aptavail -n -F Provides -s Package --eregex "(^| )$package(,|$)") | \
 			       sed "s/ /, /g")"
-		pinfo="Provided-By: $pr_by"
+		if [ "$pr_by" ]; then
+			RET=0
+			pinfo="Provided-By: $pr_by"
+		fi
 	fi
 
-	[ "$pinfo" ] || echo "Warning: no dependency info found about '$package'" >&2
 	echo "$pinfo"
-}
-
-get_deps() {
-	echo "$1" | grep "^$2:" | sed "s/^[^:]*: //"
+	return $RET
 }
 
 grep_source() {
 	local package=$1
 	local pinfo
+	local RET=0
 
 	pinfo="$(apt-cache showsrc $package | grep -E "^Build-Depends(-Indep)?:")"
+	[ "$pinfo" ] || RET=1
 
-	[ "$pinfo" ] || echo "Warning: no build dependency info found about '$package'" >&2
 	echo "$pinfo"
+	return $RET
+}
+
+get_deps() {
+	echo "$1" | grep "^$2:" | sed "s/^[^:]*: //"
 }
 
 
@@ -356,6 +370,8 @@ process_deps() {
 	local predep_OR_name=$5
 	local IFS dep dep_or dep_package dep_tree verdep OR_pkgs first
 
+	[ $verbose -lt 3 ] || echo "D: Dependencies for '$package': $deps" >&2
+
 	IFS=,
 	for dep in $deps; do
 		IFS="$IFS_SV"
@@ -405,10 +421,11 @@ process_deps() {
 			dep_tree=$dep_tree_in
 
 			dep_package=${dep_or%% *}
+			[ $verbose -lt 3 ] || echo "D: $package - processing dependency '$dep_package'" >&2
 			# Check for arch-conditioned build-dependencies
 			# Note: for build dependencies verdep can include arch-conditions
 			if ! verdep=$(check_arch $dep_type "${dep_or#* }"); then
-				echo "Info: Build dependency ($dep_type) on '$dep_package' not for $ARCH" >&2
+				[ $verbose -lt 1 ] || echo "I: Build dependency ($dep_type) on '$dep_package' not for $ARCH" >&2
 				continue
 			fi
 
@@ -505,13 +522,24 @@ process_package() {
 	local ptype="$4"
 	local pinfo providers deps 
 
-	#echo "Debug: Processing $package ${ptype:+($ptype)}" >&2
+	[ $verbose -lt 2 ] || echo "I: Processing $package ${ptype:+($ptype)}" >&2
 
-	if [ "$ptype" = B ]; then
-		pinfo="$(prep_deps "$(grep_source $package)")"
+	RET=0
+	if [ "$ptype" = S ]; then
+		pinfo="$(grep_source $package)" || RET=$?
 	else
-		pinfo="$(prep_deps "$(grep_avail $package)")"
+		pinfo="$(grep_avail $package)" || RET=$?
 	fi
+
+	if [ "$ptype" = B ] || [ "$ptype" = S ]; then
+		if [ $RET -eq 0 ]; then
+			[ "$want_dep" ] || print_dot_header
+		else
+			echo "Error: no dependency info found for '$package'" >&2
+			exit 1
+		fi
+	fi
+	pinfo="$(prep_deps "$pinfo")"
 
 	package_done="$package_done$NL$package"
 
@@ -523,7 +551,7 @@ process_package() {
 
 	[ ! "$ptype" = L ] || return 0
 
-	if [ "$ptype" = B ]; then
+	if [ "$ptype" = S ]; then
 		deps=$(get_deps "$pinfo" Build-Depends)
 		process_deps $package "$deps" B "" ""
 		deps=$(get_deps "$pinfo" Build-Depends-Indep)
@@ -583,8 +611,15 @@ elif [ "$no_skip" ] && [ "$package_skip" ]; then
 	package_skip=""
 fi
 
-[ "$want_dep" ] || print_dot_header
+# If a dependency path is asked for, check if the second package exists
+if [ "$want_dep" ]; then
+	if ! grep_avail $want_dep >/dev/null; then
+		echo "Error: no dependency info found for '$want_dep'" >&2
+		exit 1
+	fi
+fi
 
-process_package $requested_package $requested_package "" "${build_dep:+B}"
+# ptype B/S indicates "start" binary/source package
+process_package $requested_package $requested_package "" $ptype
 
 [ "$want_dep" ] || print_dot_footer
