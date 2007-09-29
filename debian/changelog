@@ -1,14 +1,13 @@
 debtree (0.6.0) UNRELEASED; urgency=low
 
-  * Add sanity check for presence of dctrl-tools scripts.
-    Thanks to Maximilian Attems for the suggestion.
+  * Add support for generating build dependency graphs. By default a graph for
+    the current architecture is generated.
+  * Add new option no-conflicts; useful for build dependency graphs.
   * Add new option no-skip. This allows packages that by default are skipped
     (not included at all) to be shown as "end" packages.
   * Add new option show-all. This results in the full dependency tree to be
     generated. The dependencies for every package are expanded and no packages
     are skipped.
-  * Add support for generating build dependency graphs. By default a graph for
-    the current architecture is generated.
   * Mark unknown packages with a different color ('oldlace'). This can only
     be done for packages that are not part of an alternatives set; for those
     that are, a warning is printed.
@@ -16,8 +15,10 @@ debtree (0.6.0) UNRELEASED; urgency=low
     alternative dependencies to avoid stray nodes in a graph (seen with
     geneweb).
   * Introduce verbosity options and rationalize messages and error handling.
+  * Add sanity check for presence of dctrl-tools scripts.
+    Thanks to Maximilian Attems for the suggestion.
 
- -- Frans Pop <fjp@debian.org>  Sun, 30 Sep 2007 00:21:46 +0200
+ -- Frans Pop <fjp@debian.org>  Sun, 30 Sep 2007 01:08:56 +0200
 
 debtree (0.5.0) UNRELEASED; urgency=low
 

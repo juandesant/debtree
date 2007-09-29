@@ -55,6 +55,7 @@ build_dep=""
 with_alternatives=1
 with_suggests=""
 with_recommends=1
+with_conflicts=1
 with_vconflicts=""
 with_versions=1
 no_skip=""
@@ -73,6 +74,8 @@ while true; do
 		with_alternatives="" ;;
 	    --no-recommends)
 		with_recommends="" ;;
+	    --no-conflicts)
+		with_conflicts="" ;;
 	    -S|--with-suggests)
 		with_suggests=1 ;;
 	    -VC|--versioned-conflicts)
@@ -587,8 +590,10 @@ process_package() {
 		process_deps $package "$deps" S "$dep_tree" "$predep_OR_name"
 	fi
 
-	deps=$(get_deps "$pinfo" Conflicts)
-	process_deps $package "$deps" C "$dep_tree" "$predep_OR_name"
+	if [ "$with_conflicts" ]; then
+		deps=$(get_deps "$pinfo" Conflicts)
+		process_deps $package "$deps" C "$dep_tree" "$predep_OR_name"
+	fi
 
 	# TODO (?)
 	#provides=$(get_deps "$pinfo" Provides)
