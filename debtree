@@ -1,7 +1,7 @@
 #! /bin/bash
 set -e
 
-# debtree version 0.5.0
+# debtree version 0.5.1
 # Copyright: Frans Pop <elendil@planet.nl>, 2007
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -38,6 +38,11 @@ set -e
 # - automatically split graphs over multiple subgraphs (which dot will place
 #   on separate pages)
 # - Identify transitional packages
+
+if ! which grep-available grep-aptavail >/dev/null 2>&1; then
+	echo "Missing dependency: please install dctrl-tools" >&2
+	exit 1
+fi
 
 ### INITIALIZATION ###
 
