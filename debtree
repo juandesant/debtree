@@ -38,8 +38,6 @@ set -e
 # - automatically split graphs over multiple subgraphs (which dot will place
 #   on separate pages)
 # - identify transitional packages
-# - indicate packages for which no info at all could be found; this is relevant
-#   for example when creating build dependency graphs for other arches
 
 if ! which grep-available grep-aptavail >/dev/null 2>&1; then
 	echo "Missing dependency: please install dctrl-tools" >&2
@@ -504,7 +502,7 @@ process_pseudo() {
 
 		# Recurse to get dependencies for providing package
 		dep_tree="$dep_tree <- $provider"
-		if ! check_list done "$provider" && [ "$ptype" = L ]; then
+		if ! check_list done "$provider" && [ ! "$ptype" = L ]; then
 			process_package $provider "$dep_tree" "" ""
 		fi
 	fi
@@ -512,6 +510,17 @@ process_pseudo() {
 	# Green arrow sufficiently identifies pseudo package that is part of alternatives
 	if [ -z "$predep_OR_name" ] || check_list OR_seen "$package"; then
 		echo -e "\t\"$package\" [shape=octagon];"
+	fi
+}
+
+process_missing() {
+	local package=$1
+
+	local prior_OR_name="$(get_prior_OR_name $package)"
+	if [ -z "$prior_OR_name" ]; then
+		echo -e "\t\"$package\" [style=filled,color=oldlace];"
+	elif [ $verbose -ge 1 ]; then
+		echo "W: Cannot mark unknown package '$package' in alternatives '$prior_OR_name'" >&2
 	fi
 }
 
@@ -537,6 +546,10 @@ process_package() {
 		else
 			echo "Error: no dependency info found for '$package'" >&2
 			exit 1
+		fi
+	else
+		if [ $RET -ne 0 ]; then
+			process_missing $package
 		fi
 	fi
 	pinfo="$(prep_deps "$pinfo")"
@@ -580,15 +593,6 @@ process_package() {
 	# TODO (?)
 	#provides=$(get_deps "$pinfo" Provides)
 	#[ -z "$provides" ] || echo "$package provides: $provides" >&2
-
-	# For packages we did not yet recurse through, check if they are pseudo packages
-	if [ -z "$dep_type" ]; then
-		for dep_package in $package_leaf; do
-			if ! check_list done "$dep_package"; then
-				process_package $dep_package "" "" L
-			fi
-		done
-	fi
 }
 
 ### MAINLINE ###
@@ -621,5 +625,12 @@ fi
 
 # ptype B/S indicates "start" binary/source package
 process_package $requested_package $requested_package "" $ptype
+
+# For packages we did not yet recurse through, check if they are pseudo packages
+for dep_package in $package_leaf; do
+	if ! check_list done "$dep_package"; then
+		process_package $dep_package "" "" L
+	fi
+done
 
 [ "$want_dep" ] || print_dot_footer
