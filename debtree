@@ -41,7 +41,7 @@ set -e
 # - indicate packages for which no info at all could be found; this is relevant
 #   for example when creating build dependency graphs for other arches
 
-if ! which grep-available grep-aptavail >/dev/null 2>&1; then
+if ! which grep-available grep-aptavail grep-dctrl >/dev/null 2>&1; then
 	echo "Missing dependency: please install dctrl-tools" >&2
 	exit 1
 fi
