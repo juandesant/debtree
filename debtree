@@ -50,6 +50,9 @@ IFS_SV="$IFS"
 NL="
 "
 
+SOURCES_FILE="/var/lib/apt/lists/ftp.nl.debian.org_debian_dists_lenny_main_source_Sources"
+
+build_dep=""
 with_alternatives=1
 with_suggests=""
 with_recommends=1
@@ -64,6 +67,8 @@ while true; do
 	case "$1" in
 	    "")
 		break ;;
+	    -b|--build-dep)
+		build_dep="1" ;;
 	    --no-alternatives)
 		with_alternatives="" ;;
 	    --no-recommends)
@@ -102,6 +107,12 @@ done
 
 # Don't allow Suggests without Recommends
 [ "$with_recommends" ] || with_suggests=""
+
+# Build-dep implies no-suggests and no-alternatives (recommends are optional)
+if [ "$build_dep" ]; then
+	with_suggests=""
+	with_alternatives=""
+fi
 
 if [ -z "$requested_package" ]; then
 	echo "Error: invalid number of arguments" >&2
@@ -163,6 +174,18 @@ grep_avail() {
 get_deps() {
 	echo "$1" | grep "^$2:" | sed "s/^[^:]*: //"
 }
+
+grep_source() {
+	local package=$1
+	local pinfo pr_by
+	local fields="Build-Depends,Build-Depends-Indep"
+
+	pinfo="$(grep-dctrl -XP $package -s $fields $SOURCES_FILE)"
+
+	[ "$pinfo" ] || echo "Warning: no build dependency info found about '$package'" >&2
+	echo "$pinfo"
+}
+
 
 # Convert dependency string a bit for easier parsing:
 # - remove space after ","
@@ -245,6 +268,8 @@ print_dot_dependency() {
 	    R)	: ;;
 	    S)	opts="${opts:+$opts,}style=dotted" ;;
 	    C)	opts="${opts:+$opts,}color=red" ;;
+	    B)	opts="${opts:+$opts,}color=darkgoldenrod,style=bold" ;;
+	    BI)	opts="${opts:+$opts,}color=goldenrod" ;;
 	esac
 
 	# Always include versions for versioned conflicts
@@ -387,11 +412,11 @@ process_pseudo() {
 	local providers=$2
 	local dep_tree=$3
 	local predep_OR_name=$4
-	local is_leaf="$5"
+	local ptype=$5
 	local prior_OR_name p_package p_provider
 
 	# For leaf packages we need to check if it was an alternative
-	if [ "$is_leaf" ]; then
+	if [ "$ptype" = L ]; then
 		predep_OR_name="$(get_prior_OR_name $package)"
 	fi
 
@@ -419,7 +444,7 @@ process_pseudo() {
 
 		# Recurse to get dependencies for providing package
 		dep_tree="$dep_tree <- $provider"
-		if ! check_list done "$provider" && [ -z "$is_leaf" ]; then
+		if ! check_list done "$provider" && [ "$ptype" = L ]; then
 			process_package $provider "$dep_tree" "" ""
 		fi
 	fi
@@ -434,22 +459,33 @@ process_package() {
 	local package=$1
 	local dep_tree="$2"
 	local predep_OR_name="$3"
-	local is_leaf="$4"
+	local ptype="$4"
 	local pinfo providers deps 
 
-	#echo "Debug: Processing $package ${is_leaf:+(leaf)}" >&2
+	#echo "Debug: Processing $package ${ptype:+($ptype)}" >&2
 
-	pinfo="$(prep_deps "$(grep_avail $package)")"
+	if [ "$ptype" = B ]; then
+		pinfo="$(prep_deps "$(grep_source $package)")"
+	else
+		pinfo="$(prep_deps "$(grep_avail $package)")"
+	fi
 
 	package_done="$package_done$NL$package"
 
 	# Not sure if we should do this when determining dependency paths
 	providers=$(get_deps "$pinfo" Provided-By)
 	if [ -z "$want_dep" ] && [ "$providers" ]; then
-		process_pseudo $package "$providers" "$dep_tree" "$predep_OR_name" "$is_leaf"
+		process_pseudo $package "$providers" "$dep_tree" "$predep_OR_name" "$ptype"
 	fi
 
-	[ -z "$is_leaf" ] || return 0
+	[ ! "$ptype" = L ] || return 0
+
+	if [ "$ptype" = B ]; then
+		deps=$(get_deps "$pinfo" Build-Depends)
+		process_deps $package "$deps" B "" ""
+		deps=$(get_deps "$pinfo" Build-Depends-Indep)
+		process_deps $package "$deps" BI "" ""
+	fi
 
 	deps=$(get_deps "$pinfo" Pre-Depends)
 	process_deps $package "$deps" PD "$dep_tree" "$predep_OR_name"
@@ -478,7 +514,7 @@ process_package() {
 	if [ -z "$dep_type" ]; then
 		for dep_package in $package_leaf; do
 			if ! check_list done "$dep_package"; then
-				process_package $dep_package "" "" 1
+				process_package $dep_package "" "" L
 			fi
 		done
 	fi
@@ -506,6 +542,6 @@ fi
 
 [ "$want_dep" ] || print_dot_header
 
-process_package $requested_package "$requested_package" "" ""
+process_package $requested_package $requested_package "" "${build_dep:+B}"
 
 [ "$want_dep" ] || print_dot_footer
