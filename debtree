@@ -1,7 +1,7 @@
 #! /bin/bash
 set -e
 
-# debtree version 0.5.1
+# debtree version 0.6.0
 # Copyright: Frans Pop <elendil@planet.nl>, 2007
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -55,6 +55,8 @@ with_suggests=""
 with_recommends=1
 with_vconflicts=""
 with_versions=1
+no_skip=""
+show_all=""
 do_rotate=""
 do_condense=""
 
@@ -70,6 +72,10 @@ while true; do
 		with_suggests=1 ;;
 	    -VC|--versioned-conflicts)
 		with_vconflicts=1 ;;
+	    --no-skip)
+		no_skip=1 ;;
+	    --show-all)
+		show_all=1 ;;
 	    --no-versions)
 		with_versions="" ;;
 	    -r|--rotate)
@@ -482,6 +488,16 @@ package_leaf=""
 package_OR_seen=""
 OR_cnt=0
 OR_list=""
+
+if [ "$show_all" ]; then
+	# Unset all skip and end packages
+	package_end=""
+	package_skip=""
+elif [ "$no_skip" ] && [ "$package_skip" ]; then
+	# Change skip packages to end packages
+	package_end="${package_end:+$package_end$NL}$package_skip"
+	package_skip=""
+fi
 
 [ "$want_dep" ] || print_dot_header
 
