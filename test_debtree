@@ -24,10 +24,10 @@ for opt in "--no-versions --no-alternatives --no-recommends" \
 	   "--rotate"
     do
 	if [ "$screen" ]; then
-		debtree $package $opt | dot -Tps | kghostview - &
+		./debtree $package $opt | dot -Tps | kghostview - &
 		sleep 10
 	else
-        	debtree $package $opt >$out_basename$count.dot
+        	./debtree $package $opt >$out_basename$count.dot
 		for format in ps png svg; do
 			dot -T$format -o "$out_basename$count.$format" $out_basename$count.dot
 		done
