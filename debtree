@@ -58,6 +58,7 @@ with_recommends=1
 with_conflicts=1
 with_vconflicts=""
 with_versions=1
+show_installed=""
 no_skip=""
 show_all=""
 do_rotate=""
@@ -80,12 +81,14 @@ while true; do
 		with_suggests=1 ;;
 	    -VC|--versioned-conflicts)
 		with_vconflicts=1 ;;
+	    --no-versions)
+		with_versions="" ;;
+	    -I|--show-installed)
+		show_installed=1 ;;
 	    --no-skip)
 		no_skip=1 ;;
 	    --show-all)
 		show_all=1 ;;
-	    --no-versions)
-		with_versions="" ;;
 	    -r|--rotate)
 		do_rotate=1 ;;
 	    --condense)
@@ -203,6 +206,13 @@ grep_source() {
 	return $RET
 }
 
+is_installed() {
+	local package=$1
+
+	grep-status -XP -s Status $package | grep -q " installed$" || return 1
+	return 0
+}
+
 get_deps() {
 	echo "$1" | grep "^$2:" | sed "s/^[^:]*: //"
 }
@@ -260,6 +270,20 @@ get_prior_OR_name () {
 		echo "$OR_list" | grep -E "(:|,)$package(,|$)" | \
 			head -n1 | cut -d: -f1
 	fi
+}
+
+mark_installed() {
+	local package=$1
+	echo -e "\t\"$package\" [style=filled,fillcolor=honeydew];"
+}
+
+print_endpackage() {
+	local package=$1
+	echo -e "\t\"$package\" [shape = diamond];"
+	if [ "$show_installed" ] && is_installed $package; then
+		mark_installed $package
+	fi
+	package_done="$package_done$NL$package"
 }
 
 print_dot_header() {
@@ -358,8 +382,7 @@ print_dot_dependency() {
 	if check_list end "$dep_package" && \
 	   [ -z "$OR_name" ] && [ -z "$prior_OR_name" ] && \
 	   ! check_list done "$dep_package"; then
-		echo -e "\t\"$dep_package\" [shape = diamond];"
-		package_done="$package_done$NL$dep_package"
+		print_endpackage $dep_package
 	fi
 }
 
@@ -499,8 +522,7 @@ process_pseudo() {
 		if check_list end "$provider" && \
 		   [ -z "$prior_OR_name" ] && \
 		   ! check_list done "$provider"; then
-			echo -e "\t\"$provider\" [shape = diamond];"
-			package_done="$package_done$NL$provider"
+			print_endpackage $provider
 		fi
 
 		# Recurse to get dependencies for providing package
@@ -521,7 +543,7 @@ process_missing() {
 
 	local prior_OR_name="$(get_prior_OR_name $package)"
 	if [ -z "$prior_OR_name" ]; then
-		echo -e "\t\"$package\" [style=filled,color=oldlace];"
+		echo -e "\t\"$package\" [style=filled,fillcolor=oldlace];"
 	elif [ $verbose -ge 1 ]; then
 		echo "W: Cannot mark unknown package '$package' in alternatives '$prior_OR_name'" >&2
 	fi
@@ -598,6 +620,11 @@ process_package() {
 	# TODO (?)
 	#provides=$(get_deps "$pinfo" Provides)
 	#[ -z "$provides" ] || echo "$package provides: $provides" >&2
+
+	if [ "$show_installed" ] && is_installed $package && \
+	   [ -z "$(get_prior_OR_name $package)" ]; then
+		mark_installed "$package"
+	fi
 }
 
 ### MAINLINE ###
