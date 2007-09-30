@@ -39,7 +39,7 @@ set -e
 #   on separate pages)
 # - identify transitional packages
 
-if ! which grep-available grep-aptavail >/dev/null 2>&1; then
+if ! which grep-available grep-aptavail grep-status >/dev/null 2>&1; then
 	echo "Missing dependency: please install dctrl-tools" >&2
 	exit 1
 fi
@@ -298,9 +298,14 @@ print_dot_footer() {
 
 print_dot_OR_header() {	
 	local OR_name="$1"
+	local has_inst="$2"
 
 	echo -e "\t$OR_name ["
 	echo -e "\t\tshape = \"record\""
+	if [ "$has_inst" ]; then
+		echo -e "\t\tstyle = \"filled\""
+		echo -e "\t\tfillcolor = \"honeydew\""
+	fi
 	echo -en "\t\tlabel = \""
 }
 print_dot_OR_footer() {
@@ -311,9 +316,11 @@ print_dot_OR_main() {
 	local dep_package="$1"
 	local first=$2
 
-	[ -z "$first" ] || echo -n " | "
+	[ "$first" ] || echo -n " | "
 	# Mark packages previously encountered
-	if check_list skip "$dep_package"; then
+	if [ "$dep_package" = "..." ]; then
+		echo -n "<other> ..."
+	elif check_list skip "$dep_package"; then
 		echo -n "<$dep_package> ($dep_package)"
 	elif check_list end "$dep_package"; then
 		echo -n "<$dep_package> \{$dep_package\}"
@@ -326,9 +333,10 @@ print_dot_OR_main() {
 
 print_dot_dependency() {
 	local package=$1
-	local dep_package=$2
-	local dep_type=$3
-	local verdep=$4
+	local OR_name=$2
+	local dep_package=$3
+	local dep_type=$4
+	local verdep=$5
 	local opts=""
 	local p_package p_dep_package prior_OR_name
 
@@ -392,50 +400,75 @@ process_deps() {
 	local dep_type=$3
 	local dep_tree_in=$4
 	local predep_OR_name=$5
-	local IFS dep dep_or dep_package dep_tree verdep OR_pkgs first
+	local IFS dep dep_or dep_package dep_tree verdep first
+	local OR_pkgs OR_name OR_has_inst OR_has_uninst OR_uninst
 
 	[ $verbose -lt 3 ] || echo "D: Dependencies for '$package': $deps" >&2
 
 	IFS=,
 	for dep in $deps; do
 		IFS="$IFS_SV"
-		local OR_name="" # global for called functions!
+		OR_name=""
+		OR_pkgs=""
+		OR_uninst=""
+		OR_has_inst=""
+		OR_has_uninst=""
 
-		# Create alternative dependency "records" for dot graph
-		if [ -z "$want_dep" ] && [ "$with_alternatives" ] && \
-		   echo $dep | grep -q "|"; then
-			# Check if we already have these (exact) alternatives
-			OR_pkgs=""
+		if [ -z "$want_dep" ] && echo $dep | grep -q "|" && \
+		   ([ "$with_alternatives" ] || [ "$show_installed" ]); then
+			# Gather information about alternatives
 			IFS="|"
 			for dep_or in $dep; do
 				IFS="$IFS_SV"
 
 				dep_package=${dep_or%% *}
-				OR_pkgs="${OR_pkgs:+$OR_pkgs,}$dep_package"
-			done
-
-			OR_name="$(echo "$OR_list" | grep ":$OR_pkgs$" | cut -d: -f1)"
-			if [ -z "$OR_name" ]; then
-				OR_cnt=$(($OR_cnt + 1))
-				OR_name=alt$OR_cnt
-
-				first=""
-				print_dot_OR_header "$OR_name"
-				for dep_package in $(echo $OR_pkgs | sed "s/,/ /g"); do
-					# Has this dependency already been processed as
-					# a separate package?
-					if check_list done "$dep_package" && \
-					   ! echo "$OR_list" | grep -Eq "(:|,)$dep_package(,|$)" && \
-					   ! check_list OR_seen "$dep_package"; then
-						package_OR_seen="$package_OR_seen$NL$dep_package"
+				if [ "$show_installed" ]; then
+					if is_installed $dep_package; then
+						OR_pkgs="${OR_pkgs:+$OR_pkgs,}$dep_package"
+						OR_has_inst=1
+					else
+						OR_uninst="${OR_uninst:+$OR_uninst,}$dep_package"
+						OR_has_uninst=1
 					fi
+				else
+					OR_pkgs="${OR_pkgs:+$OR_pkgs,}$dep_package"
+				fi
+			done
+			if [ "$show_installed" ] && [ -z "$OR_pkgs" ]; then
+				# If none of the alternatives is installed, show them all
+				OR_pkgs="$OR_uninst"
+				OR_has_uninst=""
+			fi
 
-					print_dot_OR_main "$dep_package" "$first"
-					first=1
-				done
-				print_dot_OR_footer
+			# Create alternative dependency "records" for dot graph
+			if [ "$with_alternatives" ]; then
+				# Check if we already have these (exact) alternatives
+				OR_name="$(echo "$OR_list" | grep ":$OR_pkgs$" | cut -d: -f1)"
+				if [ -z "$OR_name" ]; then
+					OR_cnt=$(($OR_cnt + 1))
+					OR_name=alt$OR_cnt
 
-				OR_list="$OR_list$OR_name:$OR_pkgs$NL"
+					first="1"
+					print_dot_OR_header "$OR_name" "$OR_has_inst"
+					for dep_package in $(echo $OR_pkgs | sed "s/,/ /g"); do
+						# Has this dependency already been processed as
+						# a separate package?
+						if check_list done "$dep_package" && \
+						   ! echo "$OR_list" | grep -Eq "(:|,)$dep_package(,|$)" && \
+						   ! check_list OR_seen "$dep_package"; then
+							package_OR_seen="$package_OR_seen$NL$dep_package"
+						fi
+	
+						print_dot_OR_main "$dep_package" "$first"
+						first=""
+					done
+					if [ "$show_installed" ] && [ "$OR_has_uninst" ]; then
+						print_dot_OR_main "..." "$first"
+					fi
+					print_dot_OR_footer
+
+					OR_list="$OR_list$OR_name:$OR_pkgs$NL"
+				fi
 			fi
 		fi
 
@@ -446,6 +479,12 @@ process_deps() {
 
 			dep_package=${dep_or%% *}
 			[ $verbose -lt 3 ] || echo "D: $package - processing dependency '$dep_package'" >&2
+
+			if [ "$show_installed" ] && [ "$OR_name" ] && \
+			   ! echo "$OR_pkgs" | grep -Eq "(^|,)$dep_package(,|$)"; then
+				continue
+			fi
+
 			# Check for arch-conditioned build-dependencies
 			# Note: for build dependencies verdep can include arch-conditions
 			if ! verdep=$(check_arch $dep_type "${dep_or#* }"); then
@@ -463,7 +502,7 @@ process_deps() {
 					# Skip only unversioned conflicts
 					continue
 				fi
-				print_dot_dependency $package $dep_package $dep_type "$verdep"
+				print_dot_dependency $package "$OR_name" $dep_package $dep_type "$verdep"
 			elif [ "$dep_package" = "$want_dep" ]; then
 				echo "$dep_tree"
 				continue
@@ -554,7 +593,7 @@ process_package() {
 	local dep_tree="$2"
 	local predep_OR_name="$3"
 	local ptype="$4"
-	local pinfo providers deps 
+	local pinfo providers deps
 
 	[ $verbose -lt 2 ] || echo "I: Processing $package ${ptype:+($ptype)}" >&2
 

@@ -8,6 +8,9 @@ debtree (0.6.0) UNRELEASED; urgency=low
   * Add new option show-all. This results in the full dependency tree to be
     generated. The dependencies for every package are expanded and no packages
     are skipped.
+  * Add new option show-installed. Installed packages are marked with a
+    different color ('honeydew'). For satisfied alternative dependencies only
+    installed alternative packages are installed.
   * Mark unknown packages with a different color ('oldlace'). This can only
     be done for packages that are not part of an alternatives set; for those
     that are, a warning is printed.
@@ -18,7 +21,7 @@ debtree (0.6.0) UNRELEASED; urgency=low
   * Add sanity check for presence of dctrl-tools scripts.
     Thanks to Maximilian Attems for the suggestion.
 
- -- Frans Pop <fjp@debian.org>  Sun, 30 Sep 2007 01:08:56 +0200
+ -- Frans Pop <fjp@debian.org>  Sun, 30 Sep 2007 14:58:37 +0200
 
 debtree (0.5.0) UNRELEASED; urgency=low
 
