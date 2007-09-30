@@ -234,7 +234,7 @@ check_list() {
 
 # For build dependencies, check if there are architecture conditions
 # Any versioned dependency is echo'ed back
-# The checkis done only if an architecture is specified; if not, the arch
+# The check is done only if an architecture is specified; if not, the arch
 # condition is also echo'ed back and displayed in the graph
 check_arch() {
 	local dep_type="$1"
@@ -246,7 +246,7 @@ check_arch() {
 		echo "$pkgdep"
 		return 0
 	else
-		# Echo back versioned dependency
+		# Only echo back versioned dependency
 		echo "$(echo $pkgdep | sed "s/ *\[.*\] *//")"
 
 		archdep="$(echo $pkgdep | sed "s/ *(.*) *//")"
@@ -336,13 +336,13 @@ print_dot_dependency() {
 	local OR_name=$2
 	local dep_package=$3
 	local dep_type=$4
-	local verdep=$5
+	local pkgdep=$5
 	local opts=""
-	local p_package p_dep_package prior_OR_name
+	local p_package p_dep_package prior_OR_name verdep arch_cond
 
 	# Second or later dependency in alternatives: skip unless versioned (see also below)
-	# TODO: make this work also if only some of the alternatives have versioned deps
-	if [ "$OR_name" ] && ([ -z "$with_versions" ] || [ -z "$verdep" ]) && \
+	# TODO: make this work better if only some of the alternatives have versioned deps
+	if [ "$OR_name" ] && ([ -z "$with_versions" ] || [ -z "$pkgdep" ]) && \
 	   echo "$OR_list" | grep -Eq "$OR_name:.*,$dep_package(,|$)"; then
 		return 0
 	fi
@@ -357,9 +357,15 @@ print_dot_dependency() {
 	    BI)	opts="${opts:+$opts,}color=goldenrod" ;;
 	esac
 
-	# Always include versions for versioned conflicts
-	if [ "$verdep" ]; then
-		if [ "$with_versions" ] || [ "$dep_type" = C ]; then
+	if [ "$pkgdep" ]; then
+		verdep="$(echo $pkgdep | sed "s/ *\[.*\] *//")"
+		arch_cond="$(echo $pkgdep | sed "s/ *(.*) *//")"
+		# Always include versions for versioned conflicts
+		if [ "$verdep" ] && \
+		   ([ "$with_versions" ] || [ "$dep_type" = C ]); then
+			opts="${opts:+$opts,}label=\"$verdep${arch_cond:+\\\\n$arch_cond}\""
+		elif [ "$arch_cond" ] && \
+		     ([ "$dep_type" = B ] || [ "$dep_type" = BI ]); then
 			opts="${opts:+$opts,}label=\"$verdep\""
 		fi
 	fi
@@ -368,12 +374,12 @@ print_dot_dependency() {
 	p_package="${predep_OR_name:+\"$predep_OR_name\":}\"$package\""
 
 	if [ "$OR_name" ]; then
-		# Unless we show versioned dependencies, make the link to the alternatives
-		# to the group (see also above)
-		if [ -z "$with_versions" ] || [ -z "$verdep" ]; then
-			p_dep_package="\"$OR_name\""
-		else
+		# Make the link to the alternatives to the group, unless we have
+		# to show version or arch condition (see also above)
+		if ([ "$with_versions" ] && [ "$verdep" ]) || [ "$arch_cond" ]; then
 			p_dep_package="${OR_name:+\"$OR_name\":}\"$dep_package\""
+		else
+			p_dep_package="\"$OR_name\""
 		fi
 	else
 		# Keep all dependencies on a package with the first alternative
@@ -400,7 +406,7 @@ process_deps() {
 	local dep_type=$3
 	local dep_tree_in=$4
 	local predep_OR_name=$5
-	local IFS dep dep_or dep_package dep_tree verdep first
+	local IFS dep dep_or dep_package dep_tree pkgdep first
 	local OR_pkgs OR_name OR_has_inst OR_has_uninst OR_uninst
 
 	[ $verbose -lt 3 ] || echo "D: Dependencies for '$package': $deps" >&2
@@ -486,8 +492,8 @@ process_deps() {
 			fi
 
 			# Check for arch-conditioned build-dependencies
-			# Note: for build dependencies verdep can include arch-conditions
-			if ! verdep=$(check_arch $dep_type "${dep_or#* }"); then
+			# Note: for build dependencies pkgdep can include arch-conditions
+			if ! pkgdep=$(check_arch $dep_type "${dep_or#* }"); then
 				[ $verbose -lt 1 ] || echo "I: Build dependency ($dep_type) on '$dep_package' not for $ARCH" >&2
 				continue
 			fi
@@ -498,11 +504,11 @@ process_deps() {
 				if check_list skip "$dep_package"; then
 					continue
 				elif [ "$dep_type" = C ] && \
-				     [ -z "$with_vconflicts" ] && [ "$verdep" ]; then
+				     [ -z "$with_vconflicts" ] && [ "$pkgdep" ]; then
 					# Skip only unversioned conflicts
 					continue
 				fi
-				print_dot_dependency $package "$OR_name" $dep_package $dep_type "$verdep"
+				print_dot_dependency $package "$OR_name" $dep_package $dep_type "$pkgdep"
 			elif [ "$dep_package" = "$want_dep" ]; then
 				echo "$dep_tree"
 				continue
