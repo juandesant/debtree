@@ -32,9 +32,15 @@
 <p>
 Shown are: <font color="purple">Pre-Depends</font>, <font color="blue">Depends</font>, unversioned <font color="red">Conflicts</font> and relevant <font color="green">Provides</font>.
 </p><p>
+This is one of the most basic graphs that can be generated. Only the Conflicts
+in it could have been suppressed.
+</p><p>
 <tt>perlapi-5.8.8</tt> is a virtual package provided by <tt>perl-base</tt>.
 </p><p>
 Some packages, like <tt>libc6</tt> and <tt>zlib1g</tt>, have been excluded from all graphs as so many packages depend on them that they only cause clutter without adding any real information; it would be nice to show them in some other way.
+</p><p>
+The reddish shade of <tt>debconf-tiny</tt> means that the package is unknown
+(does not exist in the package database).
 </p><p>
 Note the circular dependency between <tt>debconf</tt> and <tt>debconf-i18n</tt>.
 </p>
@@ -43,9 +49,9 @@ Note the circular dependency between <tt>debconf</tt> and <tt>debconf-i18n</tt>.
 <td width="10" />
 <td width="400">
 
-<pre><font size="-1">
+<pp><tt><font size="-1">
 $ debtree --no-recommends --no-alternatives --no-versions debconf
-</font></pre>
+</font></tt></p>
 <hr />
 <img src="thumbs/debconf1.png" alt="Dependency graph for debconf" />
 <hr />

@@ -52,6 +52,7 @@ least always showed the thumbnail correctly.
 <ul>
 <li><a href="debconf1.html">debconf</a></li>
 <li><a href="aptitude1.html">aptitude</a></li>
+<li><a href="usage1.html">other usage examples</a></li>
 </ul>
 
 <p>
@@ -73,7 +74,7 @@ not to expand the graph any further.
 
 <p>
 The <tt>debtree</tt> script can be installed using a
-<a href="debtree_0.5.0_all.deb">package</a> or
+<a href="debtree_0.6.0_all.deb">package</a> or
 just <a href="debtree">downloaded</a>.
 It is of course free software (GPL).
 </p><p>
@@ -155,12 +156,25 @@ dpkg -> coreutils (PD) -> libselinux1 (PD) -> libsepol1 (D)
 </p>
 <table>
 <tr valign="top">
+<td><tt>--build-dep&nbsp;|&nbsp;-b</tt></td>
+<td>Generate a graph showing build dependencies instead of package dependencies</td>
+</tr><tr valign="top">
+<td><tt>--arch</tt> (only with <tt>--build-dep</tt>)</td>
+<td>Specify the architecture (or 'all') for the build dependency graph
+    (default: arch of the system)</td>
+</tr><tr valign="top">
+<td><tt>--show-installed&nbsp;|&nbsp;-I</tt></td>
+<td>Show which packages are installed on the system</td>
+</tr><tr valign="top">
 <td><tt>--no-recommends</tt></td>
 <td>Don't show recommended packages</td>
 </tr><tr valign="top">
 <td><tt>--no-alternatives</tt></td>
 <td>Only show the first dependency from a set of alternatives (i.e. show what would
 be installed by default)</td>
+</tr><tr valign="top">
+<td><tt>--no-conflicts</tt></td>
+<td>Don't show unversioned conflicts</td>
 </tr><tr valign="top">
 <td><tt>--no-versions</tt></td>
 <td>Don't show the versions for versioned dependencies</td>
@@ -171,11 +185,23 @@ be installed by default)</td>
 <td><tt>--versioned-conflicts&nbsp;|&nbsp;-VC</tt></td>
 <td>Include versioned conflicts; by default only unversioned conflicts are shown</td>
 </tr><tr valign="top">
+<td><tt>--no-skip</tt></td>
+<td>Also display packages that are suppressed by default (e.g. libc6)</td>
+</tr><tr valign="top">
+<td><tt>--show-all</tt></td>
+<td>Generate full dependency tree (recurse for <em>all</em> packages; implies <tt>--no-skip</tt></td>
+</tr><tr valign="top">
 <td><tt>--rotate&nbsp;|&nbsp;-r</tt></td>
 <td>Draw the graph top-town instead of left-to-right</td>
 </tr><tr valign="top">
 <td><tt>--condense</tt></td>
 <td>Condense the graph by merging lines (relationships) between packages</td>
+</tr><tr valign="top">
+<td><tt>--quiet&nbsp;|&nbsp;-q</tt></td>
+<td>Suppress any informational/warning messages</td>
+</tr><tr valign="top">
+<td><tt>--verbose&nbsp;|&nbsp;-v</tt></td>
+<td>Increase verbosity to display debug messages; can be repeated</td>
 </tr>
 </table>
 
