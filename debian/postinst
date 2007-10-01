@@ -1,0 +1,13 @@
+#! /bin/sh -e
+
+CONFSRC="/usr/share/debtree"
+CONFDEST="/etc/debtree"
+
+case "$1" in
+    configure)
+	for file in skiplist endlist; do
+		ucf --three-way --debconf-ok $CONFSRC/$file $CONFDEST/$file
+	done
+esac
+
+#DEBHELPER#

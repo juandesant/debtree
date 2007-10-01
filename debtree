@@ -141,37 +141,15 @@ if [ -z "$requested_package" ]; then
 	exit 1
 fi
 
-# Lists to limit processing:
-# - "skip" packages are completely ignored: nothing is displayed
-# - "end" packages are displayed and marked as such, but we don't recurse
-#   to determine their dependencies
-package_skip="libc6,libgcc1,libstdc++6,zlib1g,libx11-6"
-
-# Basic general packages
-package_end="sysvinit,passwd,gnupg,procmail,logrotate,gettext"
-# Perl/Python
-package_end="$package_end,perl,python,python-minimal,python2.4"
-# Basic Debian packages & package management
-package_end="$package_end,apt,dpkg,aptitude,debconf,cdebconf,ucf"
-# Development
-package_end="$package_end,gcc,c-compiler,subversion,tla,git,git-core,mercurial"
-# Common (complex) server applications
-package_end="$package_end,exim4,postfix,apache2,mysql-server,mysql-client,postgresql,postgresql-client"
-# X-org
-package_end="$package_end,x11-common,xfonts-base,xbase-clients,xutils"
-# Common desktop
-package_end="$package_end,fontconfig,libfontconfig1,defoma,dbus,libfam0,smbclient,libnotify1"
-# KDE
-package_end="$package_end,libqt-rnt,libqt3-mt,kdelibs4c2a,libarts1c2a,libkdepim1a,kdebase-kio-plugins,kdepim-kio-plugins,kdesktop,kcontrol,kaddressbook"
-# Gnome
-package_end="$package_end,libgtk2.0-0,gconf2"
-# Tex
-package_end="$package_end,tetex-base,tex-common,texlive,texlive-base-bin,texlive-latex-recommended,texlive-latex-extra,texlive-fonts-recommended"
-# Various
-package_end="$package_end,gs-common,gv,xpdf-reader,foomatic-filters,hyperestraier"
-
-
 ### FUNCTIONS ###
+
+import_list() {
+	local file=$1
+
+	# Ignore blank lines and commas; trim whitespace
+	grep -Ev "^[[:space:]]*(#.*)?$" $file | \
+		sed "s|^[[:space:]]+||;s|[#[:space:]].*$||"
+}
 
 grep_avail() {
 	local package=$1
@@ -677,19 +655,35 @@ process_package() {
 
 ### MAINLINE ###
 
-package_skip="$(echo $package_skip | sed "s/,/\n/g")"
-package_end="$(echo $package_end | sed "s/,/\n/g")"
+package_skip=""
+package_end=""
 package_done=""
 package_leaf=""
 package_OR_seen=""
 OR_cnt=0
 OR_list=""
 
-if [ "$show_all" ]; then
-	# Unset all skip and end packages
-	package_end=""
-	package_skip=""
-elif [ "$no_skip" ] && [ "$package_skip" ]; then
+# Import lists to limit processing:
+# - "skip" packages are completely ignored: nothing is displayed
+# - "end" packages are displayed and marked as such, but we don't recurse
+#   to determine their dependencies
+if [ -z "$show_all" ]; then
+	for file in ~/.debtree/skiplist /etc/debtree/skiplist; do
+		if [ -r $file ]; then
+			[ $verbose -lt 3 ] || echo "I: Using list of 'skip' packages from $file" >&2
+			package_skip="$(import_list $file)"
+			break
+		fi
+	done
+	for file in ~/.debtree/endlist /etc/debtree/endlist; do
+		if [ -r $file ]; then
+			[ $verbose -lt 3 ] || echo "I: Using list of 'end' packages from $file" >&2
+			package_end="$(import_list $file)"
+			break
+		fi
+	done
+fi
+if [ "$no_skip" ] && [ "$package_skip" ]; then
 	# Change skip packages to end packages
 	package_end="${package_end:+$package_end$NL}$package_skip"
 	package_skip=""

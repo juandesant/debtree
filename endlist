@@ -1,0 +1,101 @@
+# This file contains a list of 'end' packages for debtree
+# By default debtree will not display any dependencies of 'end' packages
+# which helps to limit the size and complexity of dependency graphs.
+#
+# This file is ignored when debtree is used to search for dependency paths
+# between two packages.
+#
+# Note: the intention is to eventually make debtree smart enough to
+# automatically limit the size of graphs or to automtically create
+# sub graphs, without the need for manually maintained lists.
+#
+# This file can be overruled on a per-user basis by creating a custom file
+# in ~/.debtree/.
+# List one package per line; comments after package names are allowed.
+
+# Basic general packages
+sysvinit
+passwd
+gnupg
+procmail
+logrotate
+gettext
+
+# Perl/Python
+perl
+python
+python-minimal
+python2.4
+
+# Basic Debian packages & package management
+apt
+dpkg
+aptitude
+debconf
+cdebconf
+ucf
+
+# Development
+gcc
+c-compiler
+subversion
+tla
+git
+git-core
+mercurial
+
+# Common (complex) server applications
+exim4
+postfix
+apache2
+mysql-server
+mysql-client
+postgresql
+postgresql-client
+
+# X.Org
+x11-common
+xfonts-base
+xbase-clients
+xutils
+
+# Common desktop
+fontconfig
+libfontconfig1
+defoma
+dbus
+libfam0
+smbclient
+libnotify1
+
+# KDE
+libqt-rnt
+libqt3-mt
+kdelibs4c2a
+libarts1c2a
+libkdepim1a
+kdebase-kio-plugins
+kdepim-kio-plugins
+kdesktop
+kcontrol
+kaddressbook
+
+# Gnome
+libgtk2.0-0
+gconf2
+
+# Tex
+tetex-base
+tex-common
+texlive
+texlive-base-bin
+texlive-latex-recommended
+texlive-latex-extra
+texlive-fonts-recommended
+
+# Various
+gs-common
+gv
+xpdf-reader
+foomatic-filters
+hyperestraier

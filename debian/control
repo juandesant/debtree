@@ -8,7 +8,7 @@ Homepage: http://alioth.debian.org/~fjp/debtree/
 
 Package: debtree
 Architecture: all
-Depends: ${misc:Depends}, dctrl-tools
+Depends: ${misc:Depends}, ucf (>= 0.28), dctrl-tools
 Recommends: graphviz
 Description: Show relationships between packages (.deb)
  debtree has two functions:
