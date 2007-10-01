@@ -210,19 +210,29 @@ be installed by default)</td>
 </table>
 
 <p>
-<b>Notes:</b>
+<b>Configuration:</b>
 </p>
-<ul>
-<li>
-By default the following packages are ignored when generating graphs (but
-not when showing dependency paths):<br />
+<dl>
+<dt><tt>/etc/debtree/skiplist</tt></dt>
+<dd>Packages that by default will be excluded from dependency graphs.</dd>
+<dt><tt>/etc/debtree/endlist</tt></dt>
+<dd>Packages for which by default no dependencies will be shown on graphs.</dd>
+</dl>
+
+<p>
+See the comments in these files and the examples on these pages for information
+on how they are used. Suggestions for packages to add are welcome. Please mail
+both the command for the graph you'd like to reduce and the packages you're
+proposing to add to the lists.
+</p><p>
+The current list of 'skip' packages is:<br />
 <tt>libc6</tt>, <tt>libgcc1</tt>, <tt>libstdc++6</tt>, <tt>zlib1g</tt>,
 <tt>libx11-6</tt>.<br />
-Reason is that they are so common that they only result in cluttering the
-graph without adding any real information. An option is available that
-allows to generate a full graph that includes these packages.
-</li>
-</ul>
+Reason these packages are excluded is that they are so common that including
+them only result in cluttering the graph without adding any real information.
+An option is available that allows to generate a full graph that includes
+these packages.
+</p>
 
 </td>
 </tr>
