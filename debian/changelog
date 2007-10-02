@@ -4,8 +4,9 @@ debtree (0.6.1) UNRELEASED; urgency=low
     paths.
   * Move the 'skip' and 'end' lists to configuration files using ucf to
     manage them. The user can install overrides in ~/.debtree.
+  * Add logging functions to unclutter script.
 
- -- Frans Pop <fjp@debian.org>  Mon, 01 Oct 2007 16:48:54 +0200
+ -- Frans Pop <fjp@debian.org>  Tue, 02 Oct 2007 16:24:12 +0200
 
 debtree (0.6.0) UNRELEASED; urgency=low
 

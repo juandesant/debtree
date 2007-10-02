@@ -39,9 +39,37 @@ set -e
 #   on separate pages)
 # - identify transitional packages
 
-if ! which grep-available grep-aptavail grep-status >/dev/null 2>&1; then
-	echo "Missing dependency: please install dctrl-tools" >&2
+### LOG FUNCTIONS ###
+
+log() {
+	local loglevel=$1
+	local message="$2"
+	if [ $loglevel -le $verbose ]; then
+		echo "$message" >&2
+	fi
+}
+info() {
+	local loglevel=$1
+	shift
+	log $loglevel "I: $@"
+}
+warn() {
+	local loglevel=$1
+	shift
+	log $loglevel "W: $@"
+}
+debug() {
+	local loglevel=$1
+	shift
+	log $loglevel "D: $@"
+}
+error() {
+	log 0 "Error: $@"
 	exit 1
+}
+
+if ! which grep-available grep-aptavail grep-status >/dev/null 2>&1; then
+	error "Missing dependency: please install dctrl-tools"
 fi
 
 ### INITIALIZATION ###
@@ -104,8 +132,7 @@ while true; do
 	    --verbose|-v)
 		[ $verbose -eq 0 ] || verbose=$(($verbose + 1)) ;;
 	    -*)
-		echo "unrecognized argument '$1'" >&2
-		exit 1
+		error "unrecognized argument '$1'"
 		;;
 	    *)
 		if [ -z "$requested_package" ]; then
@@ -113,8 +140,7 @@ while true; do
 		elif [ -z "$want_dep" ]; then
 			want_dep=$1
 		else
-			echo "Error: invalid number of arguments" >&2
-			exit 1
+			error "invalid number of arguments"
 		fi
 		;;
 	esac
@@ -137,8 +163,7 @@ else
 fi
 
 if [ -z "$requested_package" ]; then
-	echo "Error: invalid number of arguments" >&2
-	exit 1
+	error "invalid number of arguments"
 fi
 
 ### FUNCTIONS ###
@@ -397,7 +422,7 @@ process_deps() {
 	local IFS dep dep_or dep_package dep_tree pkgdep first
 	local OR_pkgs OR_name OR_has_inst OR_has_uninst OR_uninst
 
-	[ $verbose -lt 3 ] || echo "D: Dependencies for '$package': $deps" >&2
+	debug 3 "Dependencies for '$package': $deps"
 
 	IFS=,
 	for dep in $deps; do
@@ -472,7 +497,7 @@ process_deps() {
 			dep_tree=$dep_tree_in
 
 			dep_package=${dep_or%% *}
-			[ $verbose -lt 3 ] || echo "D: $package - processing dependency '$dep_package'" >&2
+			debug 3 "Processing dependency '$package'->'$dep_package'"
 
 			if [ "$show_installed" ] && [ "$OR_name" ] && \
 			   ! echo "$OR_pkgs" | grep -Eq "(^|,)$dep_package(,|$)"; then
@@ -482,7 +507,7 @@ process_deps() {
 			# Check for arch-conditioned build-dependencies
 			# Note: for build dependencies pkgdep can include arch-conditions
 			if ! pkgdep=$(check_arch $dep_type "${dep_or#* }"); then
-				[ $verbose -lt 1 ] || echo "I: Build dependency ($dep_type) on '$dep_package' not for $ARCH" >&2
+				info 1 "Build dependency ($dep_type) on '$dep_package' not for $ARCH"
 				continue
 			fi
 
@@ -577,8 +602,8 @@ process_missing() {
 	local prior_OR_name="$(get_prior_OR_name $package)"
 	if [ -z "$prior_OR_name" ]; then
 		echo -e "\t\"$package\" [style=filled,fillcolor=oldlace];"
-	elif [ $verbose -ge 1 ]; then
-		echo "W: Cannot mark unknown package '$package' in alternatives '$prior_OR_name'" >&2
+	else
+		warn 1 "Cannot mark unknown package '$package' in alternatives '$prior_OR_name'"
 	fi
 }
 
@@ -589,7 +614,7 @@ process_package() {
 	local ptype="$4"
 	local pinfo providers deps
 
-	[ $verbose -lt 2 ] || echo "I: Processing $package ${ptype:+($ptype)}" >&2
+	info 2 "Processing $package ${ptype:+($ptype)}"
 
 	RET=0
 	if [ "$ptype" = S ]; then
@@ -602,8 +627,7 @@ process_package() {
 		if [ $RET -eq 0 ]; then
 			[ "$want_dep" ] || print_dot_header
 		else
-			echo "Error: no dependency info found for '$package'" >&2
-			exit 1
+			error "no dependency info found for '$package'"
 		fi
 	else
 		if [ -z "$want_dep" ] && [ $RET -ne 0 ]; then
@@ -677,14 +701,14 @@ OR_list=""
 if [ -z "$show_all" ]; then
 	for file in ~/.debtree/skiplist /etc/debtree/skiplist; do
 		if [ -r $file ]; then
-			[ $verbose -lt 3 ] || echo "I: Using list of 'skip' packages from $file" >&2
+			info 3 "Using list of 'skip' packages from $file"
 			package_skip="$(import_list $file)"
 			break
 		fi
 	done
 	for file in ~/.debtree/endlist /etc/debtree/endlist; do
 		if [ -r $file ]; then
-			[ $verbose -lt 3 ] || echo "I: Using list of 'end' packages from $file" >&2
+			info 3 "Using list of 'end' packages from $file"
 			package_end="$(import_list $file)"
 			break
 		fi
@@ -699,8 +723,7 @@ fi
 # If a dependency path is asked for, check if the second package exists
 if [ "$want_dep" ]; then
 	if ! grep_avail $want_dep >/dev/null; then
-		echo "Error: no dependency info found for '$want_dep'" >&2
-		exit 1
+		error "no dependency info found for '$want_dep'"
 	fi
 fi
 
@@ -708,6 +731,7 @@ fi
 process_package $requested_package $requested_package "" $ptype
 
 # For packages we did not yet recurse through, check if they are pseudo packages
+# as we want to show the providing package(s)
 for dep_package in $package_leaf; do
 	if ! check_list done "$dep_package"; then
 		process_package $dep_package "" "" L

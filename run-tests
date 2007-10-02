@@ -11,7 +11,7 @@ package=$1
 [ "$package" ] || exit 1
 
 out_basename=$package
-mkdir -p thumbs
+#mkdir -p thumbs
 
 count=1
 for opt in "--no-versions --no-alternatives --no-recommends" \
@@ -28,10 +28,10 @@ for opt in "--no-versions --no-alternatives --no-recommends" \
 		sleep 10
 	else
         	./debtree $package $opt >$out_basename$count.dot
-		for format in ps png svg; do
-			dot -T$format -o "$out_basename$count.$format" $out_basename$count.dot
-		done
-		convert -thumbnail 400 $out_basename$count.svg thumbs/$out_basename$count.png
+		#for format in ps png svg; do
+		#	dot -T$format -o "$out_basename$count.$format" $out_basename$count.dot
+		#done
+		#convert -thumbnail 400 $out_basename$count.svg thumbs/$out_basename$count.png
 	fi
 	count=$(($count + 1))
 done
