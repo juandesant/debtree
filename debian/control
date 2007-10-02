@@ -1,7 +1,7 @@
 Source: debtree
 Section: utils
 Priority: optional
-Maintainer: Frans Pop <elendil@planet.nl>
+Maintainer: Frans Pop <fjp@debian.org>
 Build-Depends: debhelper (>= 5)
 Standards-Version: 3.7.2
 Homepage: http://alioth.debian.org/~fjp/debtree/
