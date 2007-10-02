@@ -44,8 +44,26 @@ the graph. (Although in the case of debconf the result with
 <tt>-S -VC --show-all</tt> is still quite nice.)
 </p><p>
 It is more likely that you'll want additional packages to be excluded or not
-expanded, which is possible by adding them to one of the files in
-<tt>/etc/debtree/</tt>.
+expanded because the graph is too big or complex. The contents of a graph can
+be limited by:
+</p>
+<ul>
+<li>
+including less information, for example by not showing recommended packages
+or conflicts, or using the <tt>show-installed</tt> option;
+</li><li>
+limiting the depth of the graph (note that with limit lower than 3 or 4 the
+result will probably not be very useful);
+</li><li>
+adding packages to one of the configuration files in <tt>/etc/debtree/</tt>;
+</li><li>
+some combination of these methods.
+</li>
+</ul>
+
+<p>
+Some packages, especially meta packages like <tt>kde</tt>, have such a large
+number of dependencies that it is almost impossible to produce a useful graph.
 </p>
 
 </td>
