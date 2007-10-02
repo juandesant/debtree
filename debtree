@@ -651,8 +651,7 @@ process_package() {
 
 	info 2 "Level $level: processing $package ${ptype:+($ptype)}"
 
-	if [ "$max_depth" ] && [ "$ptype" != L ] && \
-	   check_list ended $package; then
+	if [ "$ptype" != L ] && check_list ended $package; then
 		debug 4 "Removing '$dep_package' from ended"
 		package_ended="$(echo "$package_ended" | grep -v "^$package$")"
 	fi
