@@ -621,7 +621,7 @@ process_package() {
 			exit 1
 		fi
 	else
-		if [ $RET -ne 0 ]; then
+		if [ -z "$want_dep" ] && [ $RET -ne 0 ]; then
 			process_missing $package
 		fi
 	fi
