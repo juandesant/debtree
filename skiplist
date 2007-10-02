@@ -7,7 +7,8 @@
 #
 # This file can be overruled on a per-user basis by creating a custom file
 # in ~/.debtree/.
-# List one package per line; comments after package names are allowed.
+# List one or more packages per line (separated by spaces or tabs).
+# Comments after package names are allowed.
 
 libc6
 libgcc1

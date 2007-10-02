@@ -147,8 +147,11 @@ import_list() {
 	local file=$1
 
 	# Ignore blank lines and commas; trim whitespace
+	# Move multiple packages on one line to separate lines
 	grep -Ev "^[[:space:]]*(#.*)?$" $file | \
-		sed "s|^[[:space:]]+||;s|[#[:space:]].*$||"
+		sed -r "s|^[[:space:]]+||	# leading whitespace
+			s|[[:space:]]*(#.*)?$||	# trailing whitespace; comments
+			s|[[:space:]]+|\n|g"	# split lines
 }
 
 grep_avail() {
@@ -163,8 +166,9 @@ grep_avail() {
 		RET=0
 	else
 		# Is this a pseudo package?
-		pr_by="$(echo $(grep-aptavail -n -F Provides -s Package --eregex "(^| )$package(,|$)") | \
-			       sed "s/ /, /g")"
+		pr_by="$(echo $(grep-aptavail -n -s Package \
+			 -F Provides --eregex "(^| )$package(,|$)") | \
+			 sed "s/ /, /g")"
 		if [ "$pr_by" ]; then
 			RET=0
 			pinfo="Provided-By: $pr_by"
@@ -204,13 +208,16 @@ get_deps() {
 # - remove space before and after "|"
 # - add space after package name if not versioned and no arch conditions
 prep_deps() {
-	 echo "$@" | sed "s:, :,:g;s: | :|:g;s:\([^]) ]\)\(,\||\|$\):\1 \2:g"
+	echo "$@" | sed -r "s:, :,:g
+			    s: \| :|:g
+			    s:([^]) ])(,|\||$):\1 \2:g"
 }
 
 check_list() {
 	local list
 	eval list="\$package_$1"
 	echo "$list" | grep -q "^$2$" || return $?
+	return 0
 }
 
 # For build dependencies, check if there are architecture conditions

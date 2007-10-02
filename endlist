@@ -11,7 +11,8 @@
 #
 # This file can be overruled on a per-user basis by creating a custom file
 # in ~/.debtree/.
-# List one package per line; comments after package names are allowed.
+# List one or more packages per line (separated by spaces or tabs).
+# Comments after package names are allowed.
 
 # Basic general packages
 sysvinit
@@ -23,16 +24,14 @@ gettext
 
 # Perl/Python
 perl
-python
-python-minimal
-python2.4
+python python-minimal
+python2.4 python2.5
 
 # Basic Debian packages & package management
-apt
 dpkg
+apt
 aptitude
-debconf
-cdebconf
+debconf cdebconf
 ucf
 
 # Development
@@ -40,18 +39,15 @@ gcc
 c-compiler
 subversion
 tla
-git
-git-core
+git git-core
 mercurial
 
 # Common (complex) server applications
 exim4
 postfix
 apache2
-mysql-server
-mysql-client
-postgresql
-postgresql-client
+mysql-server mysql-client
+postgresql postgresql-client
 
 # X.Org
 x11-common
@@ -60,8 +56,7 @@ xbase-clients
 xutils
 
 # Common desktop
-fontconfig
-libfontconfig1
+fontconfig libfontconfig1
 defoma
 dbus
 libfam0
@@ -85,8 +80,8 @@ libgtk2.0-0
 gconf2
 
 # Tex
-tetex-base
 tex-common
+tetex-base
 texlive
 texlive-base-bin
 texlive-latex-recommended
