@@ -338,27 +338,30 @@ print_dot_OR_footer() {
 }
 
 print_dot_OR_main() {
-	local dep_package="$1"
-	local first=$2
+	local package="$1"
+	local seen="$2"
+	local first=$3
 
 	[ "$first" ] || echo -n " | "
 	# Mark packages previously encountered
-	if [ "$dep_package" = "..." ]; then
+	if [ "$package" = "..." ]; then
 		echo -n "<other> ..."
-	elif check_list skip "$dep_package"; then
-		echo -n "<$dep_package> ($dep_package)"
-	elif check_list ended "$dep_package"; then
-		echo -n "<$dep_package> \{$dep_package\}"
-	elif check_list OR_seen "$dep_package"; then
-		echo -n "<$dep_package> [$dep_package]"
+	elif check_list unknown "$package"; then
+		echo -n "<$package> ?$package?"
+	elif check_list skip "$package"; then
+		echo -n "<$package> ($package)"
+	elif check_list ended "$package"; then
+		echo -n "<$package> \{$package\}"
+	elif [ "$seen" ] || check_list OR_seen "$package"; then
+		echo -n "<$package> [$package]"
 	else
-		echo -n "<$dep_package> $dep_package"
+		echo -n "<$package> $package"
 	fi
 }
 
 print_alternatives() {
 	local altrec="$1"
-	local first package
+	local package t_altrec first seen
 
 	local OR_name="$(echo "$altrec" | cut -d: -f1)"
 	local OR_has_inst="$(echo "$altrec" | cut -d: -f2)"
@@ -367,7 +370,13 @@ print_alternatives() {
 	first="1"
 	print_dot_OR_header "$OR_name" "$OR_has_inst"
 	for package in $(echo $OR_pkgs | sed "s/,/ /g"); do
-		print_dot_OR_main "$package" "$first"
+		# Is this package also part of an earlier set of alternatives?
+		seen=""
+		t_altrec="$(echo "$OR_list" | \
+			    grep -E "(:|,)$package(,|$)" | head -n1)"
+		[ "$t_altrec" = "$altrec" ] || seen="1"
+
+		print_dot_OR_main "$package" "$seen" "$first"
 		first=""
 	done
 	print_dot_OR_footer
@@ -644,7 +653,7 @@ process_missing() {
 	if [ -z "$prior_OR_name" ]; then
 		echo -e "\t\"$package\" [style=filled,fillcolor=oldlace];"
 	else
-		warn 1 "Cannot mark unknown package '$package' in alternatives '$prior_OR_name'"
+		package_unknown="$package_unknown$package$NL"
 	fi
 }
 
@@ -739,6 +748,7 @@ package_end=""
 package_ended=""
 package_done=""
 package_leaf=""
+package_unknown=""
 package_OR_seen=""
 OR_cnt=0
 OR_list=""
