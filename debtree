@@ -78,6 +78,9 @@ IFS_SV="$IFS"
 NL="
 "
 
+ARCHES="alpha,amd64,arm,hppa,i386,ia64,m68k,mips,mipsel,powerpc,s390,sparc"
+ARCHES="$ARCHES,armel,ppc64,sh,all"
+
 verbose=1
 build_dep=""
 with_alternatives=1
@@ -115,8 +118,10 @@ while true; do
 	    --show-installed|-I)
 		show_installed=1 ;;
 	    --max-depth=*)
-		# TODO: validate value (integer > 1)
-		max_depth=${1#*=} ;;
+		max_depth=${1#*=}
+		if ! echo $max_depth | grep -q "^[1-9][0-9]*$"; then
+			error "invalid value for option 'max-depth'"
+		fi ;;
 	    --no-skip)
 		no_skip=1 ;;
 	    --show-all)
@@ -127,10 +132,12 @@ while true; do
 		do_condense=1 ;;
 	    --arch=*)
 		ARCH=${1#*=}
+		if ! echo "$ARCHES" | grep -Eq "(^|,)$ARCH(,|$)"; then
+			error "invalid value for option 'arch'"
+		fi
 		if [ "$ARCH" = all ]; then
 			ARCH=""
-		fi
-		;;
+		fi ;;
 	    --quiet|-q)
 		verbose=0 ;;
 	    --verbose|-v)
