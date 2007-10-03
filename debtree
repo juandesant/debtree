@@ -1,7 +1,7 @@
 #! /bin/bash
 set -e
 
-# debtree version 0.7.0
+# debtree version 0.7.1
 # Copyright: Frans Pop <elendil@planet.nl>, 2007
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -549,6 +549,7 @@ process_deps() {
 
 			if [ -z "$want_dep" ]; then
 				if check_list skip "$dep_package"; then
+					package_skipped="$package_skipped$dep_package$NL"
 					continue
 				elif [ "$dep_type" = C ] && \
 				     [ -z "$with_vconflicts" ] && [ "$pkgdep" ]; then
@@ -744,6 +745,7 @@ process_package() {
 ### MAINLINE ###
 
 package_skip=""
+package_skipped=""
 package_end=""
 package_ended=""
 package_done=""
@@ -813,3 +815,8 @@ if [ -z "$want_dep" ]; then
 fi
 
 [ "$want_dep" ] || print_dot_footer
+
+if [ "$package_skipped" ]; then
+	info 1 "The following dependencies have been excluded from the graph (skipped):"
+	info 1 $package_skipped
+fi
