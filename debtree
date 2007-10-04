@@ -465,7 +465,7 @@ process_deps() {
 	local IFS dep dep_or dep_package dep_tree pkgdep
 	local OR_pkgs OR_name OR_has_inst OR_has_uninst OR_uninst
 
-	debug 3 "Dependencies for '$package' ($dep_type): $deps"
+	debug 3 "$level - dependencies for '$package' ($dep_type): $deps"
 
 	IFS=,
 	for dep in $deps; do
@@ -510,6 +510,7 @@ process_deps() {
 					OR_cnt=$(($OR_cnt + 1))
 					OR_name=alt$OR_cnt
 
+					debug 3 "Alternatives: new set '$OR_name' - $OR_pkgs"
 					for dep_package in $(echo $OR_pkgs | sed "s/,/ /g"); do
 						# Has this dependency already been processed as
 						# a separate package?
@@ -521,6 +522,8 @@ process_deps() {
 					done
 
 					OR_list="$OR_list$OR_name:$OR_has_inst:$OR_pkgs${OR_has_uninst:+,...}$NL"
+				else
+					debug 3 "Alternatives: matches existing set '$OR_name'"
 				fi
 			fi
 		fi
@@ -605,6 +608,8 @@ process_pseudo() {
 	local predep_OR_name=$5
 	local ptype=$6
 	local prior_OR_name p_package p_provider
+
+	debug 3 "Getting providers for pseudo package '$package'"
 
 	# For leaf packages we need to check if it was an alternative
 	if [ "$ptype" = L ]; then
@@ -693,9 +698,10 @@ process_package() {
 	fi
 	pinfo="$(prep_deps "$pinfo")"
 
+	# Mark as done now to prevent recursion loops
 	package_done="$package_done$NL$package"
 
-	# Not sure if we should do this when determining dependency paths
+	# Not sure if we should do this or not when showing dependency paths
 	providers=$(get_deps "$pinfo" Provided-By)
 	if [ -z "$want_dep" ] && [ "$providers" ]; then
 		process_pseudo $level $package \
@@ -740,6 +746,8 @@ process_package() {
 	   [ -z "$(get_prior_OR_name $package)" ]; then
 		mark_installed "$package"
 	fi
+
+	debug 3 "Level $level: processing $package ${ptype:+($ptype)} - done"
 }
 
 ### MAINLINE ###
@@ -795,7 +803,7 @@ process_package 1 $requested_package $requested_package "" $ptype
 # as we want to show the providing package(s)
 for dep_package in $package_leaf; do
 	if ! check_list done "$dep_package"; then
-		process_package 0 $dep_package "" "" L
+		process_package - $dep_package "" "" L
 	fi
 done
 
