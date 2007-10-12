@@ -25,20 +25,6 @@ set -e
 #   in almost all situations
 # - Conflicts are not recursed; what would be the point
 
-# TODO
-# - the dependency patch usage needs testing and update; concentrated on
-#   getting dependency tree (graph) correct
-# - add "usage" function and --version and --help options
-# - this code really needs a testsuite as regressions are many and subtle;
-#   comparing the .dot output with expected should be trivial if a fixed
-#   status database is used
-# - rewrite in e.g. C++; existing 'apt-cache dotty' code can be used as
-#   staring point
-# - automatic limiting
-# - automatically split graphs over multiple subgraphs (which dot will place
-#   on separate pages)
-# - identify transitional packages
-
 ### LOG FUNCTIONS ###
 
 log() {
