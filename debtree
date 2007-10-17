@@ -150,7 +150,7 @@ done
 [ "$with_conflicts" ] || with_vconflicts=""
 
 # Build-dep implies no-suggests and no-alternatives (unless installed packages
-# are being displayed; recommends are optional
+# are being displayed); recommends are optional
 if [ "$build_dep" ]; then
 	ptype=S
 	with_suggests=""
