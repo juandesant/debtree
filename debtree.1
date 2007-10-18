@@ -1,0 +1,259 @@
+.TH DEBTREE 1 "2007-10-18" "Debian Project" ""
+
+.SH NAME
+debtree \- show relationships between packages
+
+.SH SYNOPSIS
+.B debtree
+[\fIoptions\fP] \fIpackage\fP [\fIpackage\fP]
+
+.SH DESCRIPTION
+If the names of two `.deb' packages are specified, any (build) dependency
+\fIpaths\fP from the first package to the second are listed to STDOUT. For
+for each dependency relationship the type of dependency is indicated.
+.PP
+If called with a single package name, a (build) dependency \fIgraph\fP
+(in `dot' syntax) is generated for the specified package. The output is
+written to STDOUT and can be used as input for the command \fBdot\fP(1)
+from the package `graphviz'.
+.PP
+When listing dependency \fIpaths\fP, suggested packages are ignored. Conflicts
+are ignored as well as they are not relevant when searching for dependency
+paths. By default \fIall\fP packages in alternative dependencies are searched.
+.PP
+Dependency \fIgraphs\fP will by default show (pre-)dependencies, recommended
+packages and unversioned conflicts. Optionally also suggested packages and
+versioned conflicts can be included.
+
+.SS Dependency types
+The type of dependency between packages is indicated by a code for dependency
+paths, or in graphs by line type and color of the arrow indicating the
+dependency:
+    Build-Depends:           B      dark gold, bold
+    Build-Depends-Indep:     BI     light gold
+    Pre-Depends:             PD     purple, bold
+    Depends:                 D      blue
+    Recommends:              R      black
+    Suggests:                -      black, dotted
+    Conflicts:               -      red
+    Provides:                -      green, inverted arrow
+.PP
+In dependency graphs, the version requirement for versioned dependencies and
+conflicts will by default be shown alongside the arrow.
+
+.SS Alternative dependencies
+In dependency graphs, alternative dependencies will be shown within a single
+node (a rectangular shape with horizontal lines separating the packages).
+.PP
+An alternative dependency will be indicated by a single arrow, unless one or
+more of the dependencies are versioned. In that case a separate arrow (ending
+at the relevant package) showing the version requirement is drawn. Arrows for
+dependencies on a package in a set of alternatives will originate at the
+correct package in the set, though in some cases this may be on the seperation
+line between two alternatives.
+.PP
+If a package included in an alternative dependency also needs to be displayed
+separately or is also part of some other alternative dependency set, its
+dependencies will only be included once, with the packages first occurence.
+For the secondary occurences the package  name will be shown between square
+brackets: `[...]'.
+.PP
+See also the \-\-show\-installed option below.
+
+.SS Pseudo packages
+In dependency graphs, pseudo packages will be shown as an octagonal shape.
+If only a single package provides the pseudo package, this package (and
+its dependencies) will be displayed in the graph. If there are multiple
+packages that provide the pseudo package, this will be indicated by a green
+inverted arrow ending in a point shape.
+
+.SS Unknown packages
+In dependency graphs, packages that are listed as dependency, but that are
+unknown in the package database will be displayed with a reddish shade. In
+the case of alternative dependencies, the package name will be shown between
+question marks: `?...?'.
+
+.SS Managing graph size and complexity
+\fBdebtree\fP offers several mechanisms to help reduce the size of dependency
+graphs of packages with large or complex dependency trees. The first mechanism
+is to limit what types of dependencies are included, for example excluding
+Recommended or Conflicting packages from the graph. The second mechanism is
+the configuration of lists of \fIskip\fP and \fIend packages\fP; see the section
+CONFIGURATION below for details. The last mechanism is to place a hard limit on
+the depth of the dependency tree.
+.PP
+It is not possible to include the dependencies of suggested packages. Doing so
+would in almost all cases result in an explosion of the size of graphs.
+.PP
+For some packages it is unfortunately almost impossible to generate a usable
+dependency graph due to the number of dependencies they have. This is often the
+case for meta packages, for example those for KDE or GNOME.
+
+.SH OPTIONS
+This program follows the usual GNU command line syntax, with long options
+starting with two dashes (`-').
+An overview of supported options is included below.
+.PP
+Some options are only relevant when generating dependency \fIgraphs\fP; these
+options will be ignored when listing dependency \fIpaths\fP.
+
+.IP "\fB\-\-show-installed\fP, \fB\-I\fP (graphs only)"
+Show which packages are installed on the system.
+
+The nodes for packages which are installed on the system will be colored
+light green. For alternative dependencies, only installed packages will
+be included (an ellipsis is used to indicate omitted alternatives); for
+unsatisfied alternative dependencies, all alternatives will be included.
+
+.IP "\fB\-\-build\-dep\fP, \fB\-b\fP"
+Show build dependencies instead of package dependencies.
+
+Suggested packages will never be included in a build dependency graph.
+If there are alternative packages to satisfy a dependency, normally only the
+first alternative will be shown. However, when used in combination with the
+\-\-show\-installed option, all allready installed alternatives will be
+included for satisfied dependencies (unless the \-\-no\-alternatives option
+is also given).
+
+.IP "\fB\-\-arch\fP=\fIarchitecture\fP"
+Specify the architecture (or `all') for the build dependency graph. If the
+option \-\-build\dep option is not present, this option will be ignored.
+Default is the architecture of the system on which the command is being run.
+
+If architecture `all' is specified, all build dependencies will be shown.
+If any build dependencies have `architecture conditions', those will be
+displayed in a graph.
+
+If an architecture is specified (including the default), only build
+dependencies that are relevant for that architecture will be shown; build
+dependencies for other architectures will be ignored.
+
+.IP "\fB\-\-with\-suggests\fP, \fB\-S\fP (graphs only)"
+Include suggested packages; dependencies of suggested packages are never included.
+
+.IP "\fB\-\-no\-recommends\fP"
+Don't show recommended packages.
+
+This option will be ignored if used in combination with the \-\-with\-suggests
+option.
+
+.IP "\fB\-\-no\-alternatives\fP"
+Only show the first package from a set of alternative dependencies. Effectively
+this shows what package would be installed by default (in most cases).
+
+.IP "\fB\-\-no\-versions\fP (graphs only)"
+Don't show the versions for versioned dependencies.
+
+.IP "\fB\-\-no\-conflicts\fP (graphs only)"
+Don't show unversioned conflicts.
+
+.IP "\fB\-\-versioned\-conflicts\fP, \fB\-VC\fP (graphs only)"
+Include versioned conflicts; by default only unversioned conflicts are shown.
+
+This option will be ignored if used in combination with the \-\-no\-conflicts
+option.
+
+.IP "\fB\-\-max\-depth\fP=\fInumber\fP"
+Limit the number of levels of dependencies that is traversed.
+
+This option sets a limit to the number of levels \fBdebtree\fP will recurse
+when determining dependencies. Packages at the specified level will be treated
+as \fIend packages\fP (see section CONFIGURATION below).
+
+The option can be used both to reduce the size of graphs and to limit the search
+depth when listing dependency paths.
+
+.IP "\fB\-\-no\-skip\fP (graphs only)"
+Also display dependencies that are suppressed by default (e.g. libc6).
+
+When selected, \fIskip packages\fP will be treated as \fIend packages\fP instead.
+This means that dependencies that by default are not included in graphs, will
+now be shown, but their dependencies will not. See also the section CONFIGURATION
+below.
+
+.IP "\fB\-\-show\-all\fP (graphs only)"
+Display the full dependency tree.
+
+When selected, all default limits in the form of \fIend\fP and \fI skip
+packages\fP are disabled and the full dependency graph for the package will
+be generated. See also the section CONFIGURATION below.
+
+This option implies the \-\-no\-skip option, but can be used in combination with
+the \-\-max\-depth option. Note that this option does not affect the types of
+dependencies that are included.
+
+.IP "\fB\-\-rotate\fP, \fB\-r\fP (graphs only)"
+Draw the graph top\-town instead of left\-to\-right.
+
+.IP "\fB\-\-condense\fP (graphs only)"
+Activates an option of \fBdot\fP(1) that can help reduce the clutter in dense
+graphs by concentrating lines  (relationships) between packages together for
+parts of their paths.
+
+.IP "\fB\-\-quiet\fP, \fB\-q\fP"
+Suppress any informational/warning messages.
+
+.IP "\fB\-\-verbose\fP, \fB\-v\fP"
+Increase verbosity.
+
+Displays additional informational and debug messages; can be repeated up to
+three times.
+
+.\" .TP
+.\" .B \-h, \-\-help
+.\" Show summary of options.
+.\" .TP
+.\" .B \-v, \-\-version
+.\" Show version of program.
+
+.SH CONFIGURATION
+\fBdebtree\fP can be configured to limit the size and complexity of dependency
+graphs. This is done using two lists:
+.IP "/etc/debtree/skiplist, ~/.debtree/skiplist"
+List of \fIskip packages\fP. Packages included in this list are completely
+excluded from graphs. The list should only contain dependencies that are so
+common that including them in graphs only clutters the graph and does not
+really add any information. Examples are libc6 and zlib1g. If a skip package
+is listed as an alternative dependency, it will be shown with the package name
+between parentheses: `(...)'.
+.IP "/etc/debtree/endlist, ~/.debtree/endlist"
+List of \fIend packages\fP. Packages included in this list are shown in the
+graph, but their dependencies will not be shown. A diamond shape is used to
+indicate an end package; in the case of alternative dependencies, the package
+name will be shown between braces: `{...}'.
+
+Preferably only packages that offer a functionality that is somewhat distinct
+from its reverse dependencies should be included in this list. In some cases
+it may be necessary to also include packages because their dependency tree is
+just too big or complex.
+.PP
+If a list is present under the HOME directory of the user, that file will be used
+instead of the default file in /etc/debtree/.
+.PP
+Note that these lists do not affect the listing of dependency paths.
+.PP
+See also the options \-\-no\-skip, \-\-show\-all and \-\-max\-depth.
+
+.SH EXAMPLES
+Below are some basic usage examples for \fBdebtree\fP.
+For more extensive examples of graphs and additional information, please
+see the \fBdebtree\fP website: \fIhtpp://alioth.debian.org/~fjp/debtree\fP.
+.PP
+.IP "$ debtree dpkg libsepol1"
+List the dependency path(s) from package \fIdpkg\fP to package \fIlibsepol1\fP.
+.IP "$ debtree dpkg >dpkg.dot"
+Generate the dependency graph for package \fIdpkg\fP and save the output to a
+file `dpkg.dot'.
+.IP "$ dot -Tsvg -o dpkg.svg dpkg.dot"
+Use \fBdot\fP(1) to generate an SVG image from the `.dot' file.
+.IP "$ debtree dpkg | dot -Tpng >dpkg.png"
+Generate the dependency graph for package \fIdpkg\fP as PNG image and save
+the resulting output to a file.
+.IP "$ debtree -b dpkg | dot -Tps | kghostview - &"
+Generate the build dependency graph for package \fIdpkg\fP in postscript format
+and view the result using KDE's \fBkghostview\fP(1).
+
+.SH SEE ALSO
+.BR dot (1).
+.SH AUTHOR
+Frans Pop <elendil@planet.nl>.

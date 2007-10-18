@@ -144,7 +144,11 @@ dpkg -> coreutils (PD) -> libselinux1 (PD) -> libsepol1 (D)
 <h3 id="usage">Usage</h3>
 
 <p>
-<b>Examples:</b>
+See the <b>debtree</b>(1) man page for detailed usage information.
+</p>
+
+<p>
+<b>Examples</b>
 </p>
 <ul>
 <li><b>Show the dependency path between two packages</b><br />
@@ -158,19 +162,22 @@ dpkg -> coreutils (PD) -> libselinux1 (PD) -> libsepol1 (D)
 </ul>
 
 <p>
-<b>Option summary:</b>
+<b>Option summary</b>
 </p>
 <table>
 <tr valign="top">
+<td><tt>--show-installed&nbsp;|&nbsp;-I</tt></td>
+<td>Show which packages are installed on the system</td>
+</tr><tr valign="top">
 <td><tt>--build-dep&nbsp;|&nbsp;-b</tt></td>
 <td>Generate a graph showing build dependencies instead of package dependencies</td>
 </tr><tr valign="top">
-<td><tt>--arch=&lt;arch&gt;</tt><br />(only with <tt>--build-dep</tt>)</td>
+<td><tt>--arch=&lt;arch&gt;</tt></td>
 <td>Specify the architecture (or 'all') for the build dependency graph
     (default is the architecture of the system)</td>
 </tr><tr valign="top">
-<td><tt>--show-installed&nbsp;|&nbsp;-I</tt></td>
-<td>Show which packages are installed on the system</td>
+<td><tt>--with-suggests&nbsp;|&nbsp;-S</tt></td>
+<td>Include suggested packages; dependencies of suggested packages are never included</td>
 </tr><tr valign="top">
 <td><tt>--no-recommends</tt></td>
 <td>Don't show recommended packages</td>
@@ -179,14 +186,11 @@ dpkg -> coreutils (PD) -> libselinux1 (PD) -> libsepol1 (D)
 <td>Only show the first dependency from a set of alternatives (i.e. show what would
 be installed by default)</td>
 </tr><tr valign="top">
-<td><tt>--no-conflicts</tt></td>
-<td>Don't show unversioned conflicts</td>
-</tr><tr valign="top">
 <td><tt>--no-versions</tt></td>
 <td>Don't show the versions for versioned dependencies</td>
 </tr><tr valign="top">
-<td><tt>--with-suggests&nbsp;|&nbsp;-S</tt></td>
-<td>Include suggested packages; dependencies of suggested packages are never included</td>
+<td><tt>--no-conflicts</tt></td>
+<td>Don't show unversioned conflicts</td>
 </tr><tr valign="top">
 <td><tt>--versioned-conflicts&nbsp;|&nbsp;-VC</tt></td>
 <td>Include versioned conflicts; by default only unversioned conflicts are shown</td>
@@ -215,7 +219,7 @@ be installed by default)</td>
 </table>
 
 <p>
-<b>Configuration:</b>
+<b>Configuration</b>
 </p>
 <dl>
 <dt><tt>/etc/debtree/skiplist</tt></dt>

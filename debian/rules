@@ -7,9 +7,6 @@ build: build-stamp
 build-stamp:
 	dh_testdir
 
-	# Compile the package.
-	#docbook-to-man debian/debtree.sgml > debtree.1
-
 	touch $@
 
 clean:
@@ -34,7 +31,7 @@ binary-indep: build install
 	dh_testroot
 	dh_installdocs TODO
 	dh_installchangelogs
-#	dh_installman
+	dh_installman debtree.1
 	dh_compress
 	dh_fixperms
 	dh_installdeb

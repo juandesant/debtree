@@ -2,8 +2,9 @@ debtree (0.7.1) UNRELEASED; urgency=low
 
   * Print info message with skipped dependencies after generating graph.
   * Split ToDo items out of script into separate file.
+  * Add man page.
 
- -- Frans Pop <fjp@debian.org>  Sat, 13 Oct 2007 01:35:36 +0200
+ -- Frans Pop <fjp@debian.org>  Thu, 18 Oct 2007 15:41:11 +0200
 
 debtree (0.7.0) UNRELEASED; urgency=low
 
