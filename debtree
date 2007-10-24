@@ -1,7 +1,7 @@
 #! /bin/bash
 set -e
 
-# debtree version 0.7.1
+# debtree version 0.7.2
 # Copyright: Frans Pop <elendil@planet.nl>, 2007
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
@@ -240,6 +240,13 @@ check_list() {
 	eval list="\$package_$1"
 	echo "$list" | grep -q "^$2$" || return $?
 	return 0
+}
+
+add_skipped() {
+	local package=$1
+	if ! check_list skipped "$package"; then
+		package_skipped="$package_skipped$package$NL"
+	fi
 }
 
 # For build dependencies, check if there are architecture conditions
@@ -538,7 +545,7 @@ process_deps() {
 
 			if [ -z "$want_dep" ]; then
 				if check_list skip "$dep_package"; then
-					package_skipped="$package_skipped$dep_package$NL"
+					add_skipped "$dep_package"
 					continue
 				elif [ "$dep_type" = C ] && \
 				     [ -z "$with_vconflicts" ] && [ "$pkgdep" ]; then
@@ -613,22 +620,26 @@ process_pseudo() {
 	else
 		provider=${providers%% *}
 
-		prior_OR_name="$(get_prior_OR_name $provider)"
-		p_provider="${prior_OR_name:+\"$prior_OR_name\":}\"$provider\""
-		echo -e "\t$p_package -> $p_provider [dir=back,arrowtail=inv,color=green];"
+		if check_list skip "$provider"; then
+			add_skipped "$provider"
+		else
+			prior_OR_name="$(get_prior_OR_name $provider)"
+			p_provider="${prior_OR_name:+\"$prior_OR_name\":}\"$provider\""
+			echo -e "\t$p_package -> $p_provider [dir=back,arrowtail=inv,color=green];"
 
-		if check_list end "$provider" && \
-		   [ -z "$prior_OR_name" ] && \
-		   ! check_list done "$provider"; then
-			debug 4 "Adding '$dep_package' (provides) to ended (list)"
-			package_ended="$package_ended$NL$provider"
-			package_done="$package_done$NL$provider"
-		fi
+			if check_list end "$provider" && \
+			   [ -z "$prior_OR_name" ] && \
+			   ! check_list done "$provider"; then
+				debug 4 "Adding '$dep_package' (provides) to ended (list)"
+				package_ended="$package_ended$NL$provider"
+				package_done="$package_done$NL$provider"
+			fi
 
-		# Recurse to get dependencies for providing package
-		dep_tree="$dep_tree <- $provider"
-		if ! check_list done "$provider" && [ ! "$ptype" = L ]; then
-			process_package $(($level + 1)) $provider "$dep_tree" "" ""
+			# Recurse to get dependencies for providing package
+			dep_tree="$dep_tree <- $provider"
+			if ! check_list done "$provider" && [ ! "$ptype" = L ]; then
+				process_package $(($level + 1)) $provider "$dep_tree" "" ""
+			fi
 		fi
 	fi
 
@@ -812,5 +823,5 @@ fi
 
 if [ "$package_skipped" ]; then
 	info 1 "The following dependencies have been excluded from the graph (skipped):"
-	info 1 $package_skipped
+	info 1 $(echo $package_skipped)
 fi
