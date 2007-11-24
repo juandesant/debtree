@@ -42,6 +42,10 @@ tla
 git git-core
 mercurial
 
+# Common build dependencies
+debiandoc-sgml
+docbook-utils
+
 # Common (complex) server applications
 exim4
 postfix
