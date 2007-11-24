@@ -74,6 +74,7 @@ with_suggests=""
 with_recommends=1
 with_conflicts=1
 with_vconflicts=""
+with_provides=1
 with_versions=1
 show_installed=""
 max_depth=""
@@ -95,6 +96,8 @@ while true; do
 		with_recommends="" ;;
 	    --no-conflicts)
 		with_conflicts="" ;;
+	    --no-provides)
+		with_provides="" ;;
 	    --with-suggests|-S)
 		with_suggests=1 ;;
 	    --versioned-conflicts|-VC)
@@ -155,6 +158,7 @@ if [ "$build_dep" ]; then
 	ptype=S
 	with_suggests=""
 	[ "$show_installed" ] || with_alternatives=""
+	with_provides=""
 else
 	ptype=B
 fi
@@ -625,7 +629,11 @@ process_pseudo() {
 		else
 			prior_OR_name="$(get_prior_OR_name $provider)"
 			p_provider="${prior_OR_name:+\"$prior_OR_name\":}\"$provider\""
-			echo -e "\t$p_package -> $p_provider [dir=back,arrowtail=inv,color=green];"
+			if [ $level -eq 1 ]; then
+				echo -e "\t$p_provider -> $p_package [arrowhead=inv,color=green];"
+			else
+				echo -e "\t$p_package -> $p_provider [dir=back,arrowtail=inv,color=green];"
+			fi
 
 			if check_list end "$provider" && \
 			   [ -z "$prior_OR_name" ] && \
@@ -735,9 +743,17 @@ process_package() {
 		process_deps $level $package "$deps" C "$dep_tree" "$predep_OR_name"
 	fi
 
-	# TODO (?)
-	#provides=$(get_deps "$pinfo" Provides)
-	#[ -z "$provides" ] || echo "$package provides: $provides" >&2
+	# Include Provides only for the requested package itself
+	if [ -z "$want_dep" ] && [ "$with_provides" ] && [ $level -eq 1 ]; then
+		provides=$(get_deps "$pinfo" Provides | sed "s/ //g")
+		if [ "$provides" ]; then
+			IFS=,
+			for provided in $provides; do
+				IFS="$IFS_SV"
+				process_pseudo $level $provided $package "$dep_tree" "" L
+			done
+		fi
+	fi
 
 	if [ "$show_installed" ] && is_installed $package && \
 	   [ -z "$(get_prior_OR_name $package)" ]; then
@@ -798,13 +814,15 @@ process_package 1 $requested_package $requested_package "" $ptype
 
 # For packages we did not yet recurse through, check if they are pseudo packages
 # as we want to show the providing package(s)
+info 2 "Processing leaf packages"
 for dep_package in $package_leaf; do
 	if ! check_list done "$dep_package"; then
-		process_package - $dep_package "" "" L
+		process_package 0 $dep_package "" "" L
 	fi
 done
 
 if [ -z "$want_dep" ]; then
+	info 2 "Final processing for graph"
 	# Print record definitions for alternatives
 	IFS="$NL"
 	for altrec in $OR_list; do
@@ -817,9 +835,10 @@ if [ -z "$want_dep" ]; then
 	for package in $package_ended; do
 		mark_endpackage $package
 	done
+
+	print_dot_footer
 fi
 
-[ "$want_dep" ] || print_dot_footer
 
 if [ "$package_skipped" ]; then
 	info 1 "The following dependencies have been excluded from the graph (skipped):"

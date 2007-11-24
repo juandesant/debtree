@@ -22,8 +22,9 @@ are ignored as well as they are not relevant when searching for dependency
 paths. By default \fIall\fP packages in alternative dependencies are searched.
 .PP
 Dependency \fIgraphs\fP will by default show (pre-)dependencies, recommended
-packages and unversioned conflicts. Optionally also suggested packages and
-versioned conflicts can be included.
+packages, unversioned conflicts, and virtual packages provided by the requested
+package. Optionally also suggested packages and versioned conflicts can be
+included.
 
 .SS Dependency types
 The type of dependency between packages is indicated by a code for dependency
@@ -60,12 +61,15 @@ brackets: `[...]'.
 .PP
 See also the \-\-show\-installed option below.
 
-.SS Pseudo packages
-In dependency graphs, pseudo packages will be shown as an octagonal shape.
-If only a single package provides the pseudo package, this package (and
+.SS Virtual packages
+In dependency graphs, virtual packages will be shown as an octagonal shape.
+If only a single package provides the virtual package, this package (and
 its dependencies) will be displayed in the graph. If there are multiple
-packages that provide the pseudo package, this will be indicated by a green
+packages that provide the virtual package, this will be indicated by a green
 inverted arrow ending in a point shape.
+.PP
+A regular dependency graph will by default also show any virtual packages
+provided by the requested binary package.
 
 .SS Unknown packages
 In dependency graphs, packages that are listed as dependency, but that are
@@ -140,6 +144,9 @@ option.
 .IP "\fB\-\-no\-alternatives\fP"
 Only show the first package from a set of alternative dependencies. Effectively
 this shows what package would be installed by default (in most cases).
+
+.IP "\fB\-\-no\-provides\fP"
+Don't show virtual packages provided by the requested package.
 
 .IP "\fB\-\-no\-versions\fP (graphs only)"
 Don't show the versions for versioned dependencies.
