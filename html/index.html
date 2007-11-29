@@ -79,9 +79,9 @@ included in the graph using the available command line options.
 
 <p>
 The <tt>debtree</tt> script can be installed using this
-<a href="debtree_0.7.1_all.deb">package</a>
-(<a href="debtree_0.7.1.tar.gz">source</a>,
-<a href="debtree_0.7.1.dsc" type="text/plain">.dsc</a>).
+<a href="debtree_0.7.2_all.deb">package</a>
+(<a href="debtree_0.7.2.tar.gz">source</a>,
+<a href="debtree_0.7.2.dsc" type="text/plain">.dsc</a>).
 It is of course free software (GPL).
 </p><p>
 Its only dependency is <tt>dctrl-tools</tt>; <tt>graphviz</tt> is recommended.
@@ -185,6 +185,12 @@ See the <b>debtree</b>(1) man page for detailed usage information.
 <td><tt>--no-alternatives</tt></td>
 <td>Only show the first dependency from a set of alternatives (i.e. show what would
 be installed by default)</td>
+</tr><tr valign="top">
+<td><tt>--no-provides</tt></td>
+<td>Do not show virtual packages provided by the requested package</td>
+</tr><tr valign="top">
+<td><tt>--max-providers=&lt;num&gt;</tt></td>
+<td>Limit the display of packages that provide a virtual package (default is 3)</td>
 </tr><tr valign="top">
 <td><tt>--no-versions</tt></td>
 <td>Don't show the versions for versioned dependencies</td>
