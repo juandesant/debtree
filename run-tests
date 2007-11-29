@@ -7,31 +7,65 @@ if [ "$1" = -s ]; then
 	shift
 fi
 
-package=$1
-[ "$package" ] || exit 1
+web=""
+if [ "$1" = -w ]; then
+	web=1
+	shift
+fi
 
-out_basename=$package
-#mkdir -p thumbs
+target="$1"
+if [ -z "$screen" ] && [ "$target" ]; then
+	mkdir -p $target
+	if [ "$web" ]; then
+		mkdir -p $target/thumbs
+	fi
+fi
 
-count=1
-for opt in "--no-versions --no-alternatives --no-recommends" \
-	   "--no-versions --no-alternatives" \
-	   "--no-versions --no-alternatives --with-suggests" \
-	   "--no-versions" \
-	   "" \
-	   "--with-suggests" \
-	   "--with-suggests --versioned-conflicts" \
-	   "--rotate"
-    do
+gen_set() {
+	count=1
+	for opt in "--no-versions --no-alternatives --no-recommends" \
+		   "--no-versions --no-alternatives" \
+		   "--no-versions --no-alternatives --with-suggests" \
+		   "--no-versions" \
+		   "" \
+		   "--with-suggests" \
+		   "--with-suggests --versioned-conflicts" \
+		   "--rotate"
+	    do
+		echo $1$count $1 $opt
+		count=$(($count + 1))
+	done
+}
+
+testset="dpkg dpkg
+$(gen_set debconf)
+$(gen_set aptitude)
+usage1 dpkg -b --arch=all --no-recommends --no-conflicts
+usage2 clamav -I -S"
+
+echo "$testset" | while read outfile package opts; do
+	echo "Generating $outfile: $opts $package" >&2
 	if [ "$screen" ]; then
-		./debtree $package $opt | dot -Tps | kghostview - &
+		./debtree $opts $package | dot -Tps | kghostview - &
 		sleep 10
 	else
-        	./debtree $package $opt >$out_basename$count.dot
-		#for format in ps png svg; do
-		#	dot -T$format -o "$out_basename$count.$format" $out_basename$count.dot
-		#done
-		#convert -thumbnail 400 $out_basename$count.svg thumbs/$out_basename$count.png
+        	./debtree $opts $package >$target/$outfile.dot
+		if [ "$web" ]; then
+			for format in ps png svg; do
+				dot -T$format -o "$target/$outfile.$format" \
+					$target/$outfile.dot
+			done
+			# Generate thumbnail; from SVG gives best quality
+			convert $target/$outfile.svg -thumbnail 400 \
+				$target/thumbs/$outfile.png
+
+			# For dpkg we only need the thumbnail
+			rm -f $target/dpkg.*
+			# The following files are not wanted for the website
+			# because of size restraints
+			rm -f $target/aptitude[5678].png
+			rm -f $target/debconf[678].png
+			rm -f $target/usage[12].png
+		fi
 	fi
-	count=$(($count + 1))
 done
