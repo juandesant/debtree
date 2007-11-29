@@ -5,6 +5,9 @@ debtree (0.7.2) UNRELEASED; urgency=low
     list.
   * Show pseudo packages provided by the requested package in dependency
     graphs (not in build dependency graphs).
+  * Show multiple providing packages for a virtual package if there are less
+    than a certain number (default 3); dependencies for the providing packages
+    are not shown.
   * Add common build dependencies to end list.
   * Add some development/packaging related packages to skip and end lists;
     prompted by build dep graph for asterisk.

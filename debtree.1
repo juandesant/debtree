@@ -62,11 +62,19 @@ brackets: `[...]'.
 See also the \-\-show\-installed option below.
 
 .SS Virtual packages
-In dependency graphs, virtual packages will be shown as an octagonal shape.
+In dependency graphs, virtual packages will be shown as an octagonal shape
+with a green inverted arrow from the providing package(s).
+.PP
 If only a single package provides the virtual package, this package (and
-its dependencies) will be displayed in the graph. If there are multiple
-packages that provide the virtual package, this will be indicated by a green
-inverted arrow ending in a point shape.
+its dependencies) will be displayed in the graph.
+.PP
+If there are multiple packages that provide the virtual package, they will
+be shown within a single node with rounded corners but only if there are less
+than three (or the number set by the \-\-max\-providers option).
+If there are more than that number, this will be indicated by an ellipsis
+(`...') in the node; no individual packages will be shown but the number of
+providing packages is indicated alongside the arrow.
+Dependencies of the providing packages will not be shown.
 .PP
 A regular dependency graph will by default also show any virtual packages
 provided by the requested binary package.
@@ -147,6 +155,10 @@ this shows what package would be installed by default (in most cases).
 
 .IP "\fB\-\-no\-provides\fP"
 Don't show virtual packages provided by the requested package.
+
+.IP "\fB\-\-max\-providers\fP=\fInumber\fP (graphs only)"
+When there are multiple packages providing a virtual package, only show the
+providing packages if there are less than this number. Default is 3.
 
 .IP "\fB\-\-no\-versions\fP (graphs only)"
 Don't show the versions for versioned dependencies.
