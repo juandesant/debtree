@@ -41,7 +41,9 @@ testset="dpkg dpkg
 $(gen_set debconf)
 $(gen_set aptitude)
 usage1 dpkg -b --arch=all --no-recommends --no-conflicts
-usage2 clamav -I -S"
+usage2 clamav -I -S
+usage3.1 pidentd --max-providers=5
+usage3.2 pidentd -I"
 
 echo "$testset" | while read outfile package opts; do
 	echo "Generating $outfile: $opts $package" >&2
@@ -66,6 +68,7 @@ echo "$testset" | while read outfile package opts; do
 			rm -f $target/aptitude[5678].png
 			rm -f $target/debconf[678].png
 			rm -f $target/usage[12].png
+			rm -f $target/usage3.[12].png
 		fi
 	fi
 done
