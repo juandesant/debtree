@@ -10,8 +10,13 @@
 # List one or more packages per line (separated by spaces or tabs).
 # Comments after package names are allowed.
 
+# Very basic libraries
 libc6
 libgcc1
 libstdc++6
 zlib1g
 libx11-6
+
+# Extremely basic development libraries
+libc-dev
+libc6-dev

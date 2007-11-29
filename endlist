@@ -32,6 +32,7 @@ dpkg
 apt
 aptitude
 debconf cdebconf
+module-assistant
 ucf
 
 # Development
@@ -43,8 +44,17 @@ git git-core
 mercurial
 
 # Common build dependencies
+debhelper
 debiandoc-sgml
 docbook-utils
+
+# Libraries
+libsdl1.2debian
+
+# Development libraries
+libsdl1.2-dev
+libssl-dev
+zlib1g-dev
 
 # Common (complex) server applications
 exim4
@@ -60,6 +70,7 @@ xbase-clients
 xutils
 
 # Common desktop
+alsa-base
 fontconfig libfontconfig1
 defoma
 dbus
@@ -93,6 +104,7 @@ texlive-latex-extra
 texlive-fonts-recommended
 
 # Various
+graphviz
 gs-common
 gv
 xpdf-reader
