@@ -164,65 +164,46 @@ See the <b>debtree</b>(1) man page for detailed usage information.
 <p>
 <b>Option summary</b>
 </p>
-<table>
-<tr valign="top">
-<td><tt>--show-installed&nbsp;|&nbsp;-I</tt></td>
-<td>Show which packages are installed on the system</td>
-</tr><tr valign="top">
-<td><tt>--build-dep&nbsp;|&nbsp;-b</tt></td>
-<td>Generate a graph showing build dependencies instead of package dependencies</td>
-</tr><tr valign="top">
-<td><tt>--arch=&lt;arch&gt;</tt></td>
-<td>Specify the architecture (or 'all') for the build dependency graph
-    (default is the architecture of the system)</td>
-</tr><tr valign="top">
-<td><tt>--with-suggests&nbsp;|&nbsp;-S</tt></td>
-<td>Include suggested packages; dependencies of suggested packages are never included</td>
-</tr><tr valign="top">
-<td><tt>--no-recommends</tt></td>
-<td>Don't show recommended packages</td>
-</tr><tr valign="top">
-<td><tt>--no-alternatives</tt></td>
-<td>Only show the first dependency from a set of alternatives (i.e. show what would
-be installed by default)</td>
-</tr><tr valign="top">
-<td><tt>--no-provides</tt></td>
-<td>Do not show virtual packages provided by the requested package</td>
-</tr><tr valign="top">
-<td><tt>--max-providers=&lt;num&gt;</tt></td>
-<td>Limit the display of packages that provide a virtual package (default is 3)</td>
-</tr><tr valign="top">
-<td><tt>--no-versions</tt></td>
-<td>Don't show the versions for versioned dependencies</td>
-</tr><tr valign="top">
-<td><tt>--no-conflicts</tt></td>
-<td>Don't show unversioned conflicts</td>
-</tr><tr valign="top">
-<td><tt>--versioned-conflicts&nbsp;|&nbsp;-VC</tt></td>
-<td>Include versioned conflicts; by default only unversioned conflicts are shown</td>
-</tr><tr valign="top">
-<td><tt>--max-depth=&lt;num&gt;</tt></td>
-<td>Limit the number of levels of dependencies</td>
-</tr><tr valign="top">
-<td><tt>--no-skip</tt></td>
-<td>Also display packages that are suppressed by default (e.g. libc6)</td>
-</tr><tr valign="top">
-<td><tt>--show-all</tt></td>
-<td>Generate full dependency tree (recurse for <em>all</em> packages); implies <tt>--no-skip</tt></td>
-</tr><tr valign="top">
-<td><tt>--rotate&nbsp;|&nbsp;-r</tt></td>
-<td>Draw the graph top-town instead of left-to-right</td>
-</tr><tr valign="top">
-<td><tt>--condense</tt></td>
-<td>Condense the graph by merging lines (relationships) between packages</td>
-</tr><tr valign="top">
-<td><tt>--quiet&nbsp;|&nbsp;-q</tt></td>
-<td>Suppress any informational/warning messages</td>
-</tr><tr valign="top">
-<td><tt>--verbose&nbsp;|&nbsp;-v</tt></td>
-<td>Increase verbosity to display debug messages; can be repeated</td>
-</tr>
-</table>
+<dl>
+<dt><tt>--show-installed&nbsp;|&nbsp;-I</tt></dt>
+<dd>Show which packages are installed on the system</dd>
+<dt><tt>--build-dep&nbsp;|&nbsp;-b</tt></dt>
+<dd>Generate a graph showing build dependencies instead of package dependencies</dd>
+<dt><tt>--arch=&lt;arch&gt;</tt></dt>
+<dd>Specify the architecture (or 'all') for the build dependency graph
+    (default is the architecture of the system)</dd>
+<dt><tt>--with-suggests&nbsp;|&nbsp;-S</tt></dt>
+<dd>Include suggested packages; dependencies of suggested packages are never included</dd>
+<dt><tt>--no-recommends</tt></dt>
+<dd>Don't show recommended packages</dd>
+<dt><tt>--no-alternatives</tt></dt>
+<dd>Only show the first dependency from a set of alternatives (i.e. show what would
+be installed by default)</dd>
+<dt><tt>--no-provides</tt></dt>
+<dd>Do not show virtual packages provided by the requested package</dd>
+<dt><tt>--max-providers=&lt;num&gt;</tt></dt>
+<dd>Limit the display of packages that provide a virtual package (default: 3)</dd>
+<dt><tt>--no-versions</tt></dt>
+<dd>Don't show the versions for versioned dependencies</dd>
+<dt><tt>--no-conflicts</tt></dt>
+<dd>Don't show unversioned conflicts</dd>
+<dt><tt>--versioned-conflicts&nbsp;|&nbsp;-VC</tt></dt>
+<dd>Include versioned conflicts; by default only unversioned conflicts are shown</dd>
+<dt><tt>--max-depth=&lt;num&gt;</tt></dt>
+<dd>Limit the number of levels of dependencies</dd>
+<dt><tt>--no-skip</tt></dt>
+<dd>Also display packages that are suppressed by default (e.g. libc6)</dd>
+<dt><tt>--show-all</tt></dt>
+<dd>Generate full dependency tree (recurse for <em>all</em> packages); implies <tt>--no-skip</tt></dd>
+<dt><tt>--rotate&nbsp;|&nbsp;-r</tt></dt>
+<dd>Draw the graph top-town instead of left-to-right</dd>
+<dt><tt>--condense</tt></dt>
+<dd>Condense the graph by merging lines (relationships) between packages</dd>
+<dt><tt>--quiet&nbsp;|&nbsp;-q</tt></dt>
+<dd>Suppress any informational/warning messages</dd>
+<dt><tt>--verbose&nbsp;|&nbsp;-v</tt></dt>
+<dd>Increase verbosity to display debug messages; can be repeated</dd>
+</dl>
 
 <p>
 <b>Configuration</b>
