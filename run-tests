@@ -18,6 +18,12 @@ if [ -z "$screen" ] && [ "$target" ]; then
 	mkdir -p $target
 	if [ "$web" ]; then
 		mkdir -p $target/thumbs
+	else
+		arch=$(dpkg --print-architecture)
+		dist=$(apt-cache policy | \
+		       sed -r "/^ [0-9]+ /N; s/^ ([0-9]+) .*a=([^,]*).*/\1 \2/" | \
+		       grep "^[0-9]" | sort -nru | head -n1 | awk '{print $2}')
+		echo "Testset generated $(date -uR) on $arch/$dist" >$target/README
 	fi
 fi
 

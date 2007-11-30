@@ -1,0 +1,87 @@
+digraph "clamav" {
+	rankdir=LR;
+	node [shape=box];
+	"clamav" -> "libclamav2" [color=blue,label="(>= 0.91.2)"];
+	"libclamav2" -> "libbz2-1.0" [color=blue];
+	"libbz2-1.0" [style=filled,fillcolor=honeydew];
+	"libclamav2" -> "libgmp3c2" [color=blue];
+	"libgmp3c2" -> "libgmp3" [color=red];
+	"libgmp3c2" [style=filled,fillcolor=honeydew];
+	"clamav" -> "alt1" [color=blue];
+	"alt1":"clamav-freshclam" -> "alt2":"debconf" [color=blue,label="(>= 0.5)"];
+	"alt1":"clamav-freshclam" -> "clamav-base" [color=blue,label="(>= 0.91.2-3)"];
+	"clamav-base" -> "alt2":"debconf" [color=blue,label="(>= 0.5)"];
+	"clamav-base" -> "adduser" [color=blue];
+	"adduser" -> "perl-base" [color=blue,label="(>= 5.6.0)"];
+	"perl-base" -> "perl" [style=dotted];
+	"perl-base" [style=filled,fillcolor=honeydew];
+	"adduser" -> "passwd" [color=blue,label="(>= 1:4.0.12)"];
+	"adduser" -> "alt2" [color=blue];
+	"adduser" -> "liblocale-gettext-perl" [style=dotted];
+	"adduser" -> "perl-modules" [style=dotted];
+	"adduser" [style=filled,fillcolor=honeydew];
+	"clamav-base" -> "ucf" [color=blue,label="(>= 0.28)"];
+	"clamav-base" -> "logrotate" [color=blue];
+	"clamav-base" -> "clamav";
+	"alt1":"clamav-freshclam" -> "libclamav2" [color=blue,label="(>= 0.91.2)"];
+	"alt1":"clamav-freshclam" -> "debianutils" [color=blue,label="(>= 1.6)"];
+	"debianutils" [style=filled,fillcolor=honeydew];
+	"alt1":"clamav-freshclam" -> "ucf" [color=blue,label="(>= 0.28)"];
+	"alt1":"clamav-freshclam" -> "logrotate" [color=blue];
+	"alt1":"clamav-freshclam" -> "lsb-base" [color=blue,label="(>> 3.0)"];
+	"lsb-base" -> "sed" [color=blue];
+	"sed" [style=filled,fillcolor=honeydew];
+	"lsb-base" -> "ncurses-bin" [color=blue];
+	"ncurses-bin" -> "libncurses5" [color=purple,style=bold,label="(>= 5.6+20071006-3)"];
+	"libncurses5" -> "libgpmg1";
+	"libgpmg1" -> "gpm" [style=dotted];
+	"libgpmg1" [style=filled,fillcolor=honeydew];
+	"libncurses5" [style=filled,fillcolor=honeydew];
+	"ncurses-bin" -> "ncurses" [color=red];
+	"ncurses-bin" -> "tput" [color=red];
+	"ncurses-bin" [style=filled,fillcolor=honeydew];
+	"lsb-base" [style=filled,fillcolor=honeydew];
+	"alt1":"clamav-freshclam" -> "clamav-docs" [style=dotted];
+	"alt1":"clamav-freshclam" -> "alt1":"clamav-data" [color=red];
+	"alt1":"clamav-data" -> "alt2":"debconf" [color=blue,label="(>= 0.5)"];
+	"alt1":"clamav-data" -> "alt1":"clamav-freshclam" [color=red];
+	"clamav" -> "arj";
+	"clamav" -> "unzoo";
+	"clamav" -> "clamav-base";
+	"clamav" -> "unrar" [style=dotted,label="(>= 3.0-1)"];
+	"clamav" -> "lha" [style=dotted];
+	"clamav" -> "clamav-docs" [style=dotted];
+	"libgmp3" [style=filled,fillcolor=oldlace];
+	"ncurses" [style=filled,fillcolor=oldlace];
+	"tput" -> "ncurses-bin" [dir=back,arrowtail=inv,color=green];
+	"tput" [shape=octagon];
+	"unrar" [style=filled,fillcolor=oldlace];
+	"lha" [style=filled,fillcolor=oldlace];
+	alt1 [
+		shape = "record"
+		label = "<clamav-freshclam> clamav-freshclam | <clamav-data> clamav-data"
+	]
+	alt2 [
+		shape = "record"
+		style = "filled"
+		fillcolor = "honeydew"
+		label = "<debconf> debconf | <other> ..."
+	]
+	"perl" [shape = diamond];
+	"perl" [style=filled,fillcolor=honeydew];
+	"passwd" [shape = diamond];
+	"passwd" [style=filled,fillcolor=honeydew];
+	"liblocale-gettext-perl" [shape = diamond];
+	"liblocale-gettext-perl" [style=filled,fillcolor=honeydew];
+	"perl-modules" [shape = diamond];
+	"perl-modules" [style=filled,fillcolor=honeydew];
+	"ucf" [shape = diamond];
+	"ucf" [style=filled,fillcolor=honeydew];
+	"logrotate" [shape = diamond];
+	"logrotate" [style=filled,fillcolor=honeydew];
+	"gpm" [shape = diamond];
+	"clamav-docs" [shape = diamond];
+	"unrar" [shape = diamond];
+	"lha" [shape = diamond];
+	"clamav-docs" [shape = diamond];
+}

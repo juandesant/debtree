@@ -1,0 +1,15 @@
+digraph "dpkg" {
+	rankdir=LR;
+	node [shape=box];
+	"dpkg" -> "coreutils" [color=purple,style=bold,label="(>= 5.93-1)"];
+	"coreutils" -> "libacl1" [color=purple,style=bold,label="(>= 2.2.11-1)"];
+	"libacl1" -> "libattr1" [color=blue,label="(>= 2.4.4-1)"];
+	"libacl1" -> "libacl1-kerberos4kth" [color=red];
+	"coreutils" -> "libselinux1" [color=purple,style=bold,label="(>= 2.0.15)"];
+	"libselinux1" -> "libsepol1" [color=blue,label="(>= 2.0.3)"];
+	"coreutils" -> "stat" [color=red];
+	"dpkg" -> "dpkg-static" [color=red];
+	"libacl1-kerberos4kth" [style=filled,fillcolor=oldlace];
+	"stat" [style=filled,fillcolor=oldlace];
+	"dpkg-static" [style=filled,fillcolor=oldlace];
+}

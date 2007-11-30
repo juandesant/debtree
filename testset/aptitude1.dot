@@ -1,0 +1,19 @@
+digraph "aptitude" {
+	rankdir=LR;
+	node [shape=box];
+	"aptitude" -> "libapt-pkg-libc6.6-6-4.6" [color=blue];
+	"libapt-pkg-libc6.6-6-4.6" -> "apt" [dir=back,arrowtail=inv,color=green];
+	"libapt-pkg-libc6.6-6-4.6" [shape=octagon];
+	"aptitude" -> "libcwidget0" [color=blue];
+	"libcwidget0" -> "libncursesw5" [color=blue];
+	"libcwidget0" -> "libsigc++-2.0-0c2a" [color=blue];
+	"libsigc++-2.0-0c2a" -> "libsigc++-1.9-0" [color=red];
+	"libsigc++-2.0-0c2a" -> "libsigc++-2.0-0" [color=red];
+	"libsigc++-2.0-0c2a" -> "libsigc++-2.0-0c2" [color=red];
+	"aptitude" -> "libncursesw5" [color=blue];
+	"aptitude" -> "libsigc++-2.0-0c2a" [color=blue];
+	"libsigc++-1.9-0" [style=filled,fillcolor=oldlace];
+	"libsigc++-2.0-0" [style=filled,fillcolor=oldlace];
+	"libsigc++-2.0-0c2" [style=filled,fillcolor=oldlace];
+	"apt" [shape = diamond];
+}
