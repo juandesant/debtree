@@ -9,21 +9,15 @@ set -e
 # any later version.
 
 # Usage: debtree [options] <package name>
-#        debtree [-S] <package name> <dependency>
+#        debtree [options] <package name> <dependency>
 
-# In first case script produces a dot file for processing with 'dot'.
+# In first case the script produces a dot file for processing with 'dot'.
 # Examples: debtree <package> > <package>.dot
 #           debtree <package> | dot -Tpng -o <package>.png
 #           debtree <package> | dot -Tps | kghostview -
 #
 # In second case it will list the dependency path(s) from the first
 # to the second package.
-
-# NOTES
-# - Output looks OK in big lines, but needs verification in detail
-# - Suggests are not recursed; doing a full tree would lead to insane trees
-#   in almost all situations
-# - Conflicts are not recursed; what would be the point
 
 ### LOG FUNCTIONS ###
 
@@ -197,7 +191,7 @@ grep_avail() {
 	elif pinfo="$(grep-aptavail -XP $package -s $fields)"; then
 		RET=0
 	else
-		# Is this a pseudo package?
+		# Is this a virtual package?
 		pr_by="$(echo $(grep-aptavail -n -s Package \
 			 -F Provides --eregex "(^| )$package(,|$)") | \
 			 sed "s/ /, /g")"
@@ -268,7 +262,7 @@ check_arch() {
 	local pkgdep="$2"
 
 	if [ -z "$ARCH" ] ||
-	   ([ "$dep_type" != B ] && [ "$dep_type" != BI ]); then
+	   ([ $dep_type != B ] && [ $dep_type != BI ]); then
 		# Echo back full dependency
 		echo "$pkgdep"
 		return 0
@@ -291,10 +285,10 @@ check_arch() {
 	fi
 }
 
-get_prior_OR_name () {
+get_prior_OR_dep () {
 	local package=$1
 	if ! check_list OR_seen "$package"; then
-		echo "$OR_list" | grep -E "(:|,)$package(,|$)" | \
+		echo "$OR_dep_list" | grep -E "(:|,)$package(,|$)" | \
 			head -n1 | cut -d: -f1
 	fi
 }
@@ -306,7 +300,7 @@ mark_installed() {
 
 mark_endpackage() {
 	local package=$1
-	if [ -z "$(get_prior_OR_name $package)" ]; then
+	if [ -z "$(get_prior_OR_dep $package)" ]; then
 		echo -e "\t\"$package\" [shape = diamond];"
 		if [ "$show_installed" ] && is_installed $package; then
 			mark_installed $package
@@ -386,7 +380,7 @@ print_alternatives() {
 		if check_list OR_seen "$package"; then
 			seen=1
 		else
-			t_altrec="$(echo "$OR_list" | \
+			t_altrec="$(echo "$OR_dep_list" | \
 				    grep -E "(:|,)$package(,|$)" | head -n1)"
 			if [ $type = D ]; then
 				[ "$t_altrec" = "$altrec" ] || seen=1
@@ -413,12 +407,12 @@ print_dot_dependency() {
 	local dep_type=$4
 	local pkgdep=$5
 	local opts=""
-	local p_package p_dep_package prior_OR_name verdep arch_cond
+	local p_package p_dep_package prior_OR_dep verdep arch_cond
 
 	# Second or later dependency in alternatives: skip unless versioned (see also below)
 	# TODO: make this work better if only some of the alternatives have versioned deps
 	if [ "$OR_name" ] && ([ -z "$with_versions" ] || [ -z "$pkgdep" ]) && \
-	   echo "$OR_list" | grep -Eq "$OR_name:.*,$dep_package(,|$)"; then
+	   echo "$OR_dep_list" | grep -Eq "$OR_name:.*,$dep_package(,|$)"; then
 		return 0
 	fi
 
@@ -437,16 +431,16 @@ print_dot_dependency() {
 		arch_cond="$(echo $pkgdep | sed "s/ *(.*) *//")"
 		# Always include versions for versioned conflicts
 		if [ "$verdep" ] && \
-		   ([ "$with_versions" ] || [ "$dep_type" = C ]); then
+		   ([ "$with_versions" ] || [ $dep_type = C ]); then
 			opts="${opts:+$opts,}label=\"$verdep${arch_cond:+\\\\n$arch_cond}\""
 		elif [ "$arch_cond" ] && \
-		     ([ "$dep_type" = B ] || [ "$dep_type" = BI ]); then
+		     ([ $dep_type = B ] || [ $dep_type = BI ]); then
 			opts="${opts:+$opts,}label=\"$verdep\""
 		fi
 	fi
 	[ -z "$opts" ] || opts=" [$opts]"
 
-	p_package="${predep_OR_name:+\"$predep_OR_name\":}\"$package\""
+	p_package="${prevdep_OR_name:+\"$prevdep_OR_name\":}\"$package\""
 
 	if [ "$OR_name" ]; then
 		# Make the link to the alternatives to the group, unless we have
@@ -460,8 +454,8 @@ print_dot_dependency() {
 		# Keep all dependencies on a package with the first alternative
 		# For now unless package was previously encountered separately,
 		# in which case we use square brackets in the labels (print_dot_OR_main)
-		prior_OR_name="$(get_prior_OR_name $dep_package)"
-		p_dep_package="${prior_OR_name:+\"$prior_OR_name\":}\"$dep_package\""
+		prior_OR_dep="$(get_prior_OR_dep $dep_package)"
+		p_dep_package="${prior_OR_dep:+\"$prior_OR_dep\":}\"$dep_package\""
 	fi
 
 	echo -e "\t$p_package -> $p_dep_package$opts;"
@@ -469,9 +463,9 @@ print_dot_dependency() {
 	# How can "end" packages that are part of an OR be identified?
 	# For now, marked by using braces in the labels (see print_dot_OR_main)
 	if check_list end "$dep_package" && \
-	   [ -z "$OR_name" ] && [ -z "$prior_OR_name" ] && \
+	   [ -z "$OR_name" ] && [ -z "$prior_OR_dep" ] && \
 	   ! check_list done "$dep_package"; then
-		if [ "$dep_type" != C ]; then
+		if [ $dep_type != C ]; then
 			debug 4 "Adding '$dep_package' ($dep_type) to ended (list)"
 			package_ended="$package_ended$NL$dep_package"
 		fi
@@ -485,7 +479,7 @@ process_deps() {
 	local deps=$3
 	local dep_type=$4
 	local dep_tree_in=$5
-	local predep_OR_name=$6
+	local prevdep_OR_name=$6
 	local IFS dep dep_or dep_package dep_tree pkgdep
 	local OR_pkgs OR_name OR_has_inst OR_has_uninst OR_uninst
 
@@ -529,23 +523,25 @@ process_deps() {
 			# Create alternative dependency "records" for dot graph
 			if [ "$with_alternatives" ]; then
 				# Check if we already have these (exact) alternatives
-				OR_name="$(echo "$OR_list" | grep ":$OR_pkgs${OR_has_uninst:+,...}$" | cut -d: -f1)"
+				OR_name="$(echo "$OR_dep_list" | \
+					grep ":$OR_pkgs${OR_has_uninst:+,...}$" | \
+					cut -d: -f1)"
 				if [ -z "$OR_name" ]; then
-					OR_cnt=$(($OR_cnt + 1))
-					OR_name=alt$OR_cnt
+					OR_dep_cnt=$(($OR_dep_cnt + 1))
+					OR_name=alt$OR_dep_cnt
 
 					debug 3 "Alternatives: new set '$OR_name' - $OR_pkgs"
 					for dep_package in $(echo $OR_pkgs | sed "s/,/ /g"); do
-						# Has this dependency already been processed as
-						# a separate package?
+						# Has this dependency already been
+						# processed as a separate package?
 						if check_list done "$dep_package" && \
-						   ! echo "$OR_list" | grep -Eq "(:|,)$dep_package(,|$)" && \
+						   ! echo "$OR_dep_list" | grep -Eq "(:|,)$dep_package(,|$)" && \
 						   ! check_list OR_seen "$dep_package"; then
 							package_OR_seen="$package_OR_seen$NL$dep_package"
 						fi
 					done
 
-					OR_list="$OR_list$OR_name:$OR_has_inst:$OR_pkgs${OR_has_uninst:+,...}$NL"
+					OR_dep_list="$OR_dep_list$OR_name:$OR_has_inst:$OR_pkgs${OR_has_uninst:+,...}$NL"
 				else
 					debug 3 "Alternatives: matches existing set '$OR_name'"
 				fi
@@ -578,7 +574,7 @@ process_deps() {
 				if check_list skip "$dep_package"; then
 					add_skipped "$dep_package"
 					continue
-				elif [ "$dep_type" = C ] && \
+				elif [ $dep_type = C ] && \
 				     [ -z "$with_vconflicts" ] && [ "$pkgdep" ]; then
 					# Skip only unversioned conflicts
 					continue
@@ -624,28 +620,24 @@ process_deps() {
 	done
 }
 
-process_pseudo() {
+process_virtual() {
 	local level=$1
 	local package=$2
 	local providers=$3
 	local dep_tree=$4
-	local predep_OR_name=$5
+	local prevdep_OR_name=$5
 	local ptype=$6
-	local prior_OR_name p_package p_provider prov_cnt
+	local prior_OR_dep p_package p_provider prov_cnt
 	local OR_pkgs OR_name OR_has_inst OR_has_uninst OR_uninst
 
-	debug 3 "Getting providers for pseudo package '$package'"
-
-	# For leaf packages we need to check if it was an alternative
-	if [ "$ptype" = L ]; then
-		predep_OR_name="$(get_prior_OR_name $package)"
+	if [ $level -eq 1 ]; then
+		debug 3 "$level - '$providers' provides '$package'"
+	else
+		debug 3 "$level - '$package' provided by: $providers"
 	fi
 
-	p_package="${predep_OR_name:+\"$predep_OR_name\":}\"$package\""
+	p_package="${prevdep_OR_name:+\"$prevdep_OR_name\":}\"$package\""
 
-	# Print a dummy providing package if there are multiple; we could
-	# possibly loop and display alternatives if there are not too many
-	# alternative provides
 	prov_cnt=$(echo "$providers" | sed "s/,/\n/g" | wc -l)
 	if [ $prov_cnt -eq 1 ]; then
 		provider=${providers%% *}
@@ -653,8 +645,8 @@ process_pseudo() {
 		if check_list skip "$provider"; then
 			add_skipped "$provider"
 		else
-			prior_OR_name="$(get_prior_OR_name $provider)"
-			p_provider="${prior_OR_name:+\"$prior_OR_name\":}\"$provider\""
+			prior_OR_dep="$(get_prior_OR_dep $provider)"
+			p_provider="${prior_OR_dep:+\"$prior_OR_dep\":}\"$provider\""
 			if [ $level -eq 1 ]; then
 				echo -e "\t$p_provider -> $p_package [arrowhead=inv,color=green];"
 			else
@@ -662,7 +654,7 @@ process_pseudo() {
 			fi
 
 			if check_list end "$provider" && \
-			   [ -z "$prior_OR_name" ] && \
+			   [ -z "$prior_OR_dep" ] && \
 			   ! check_list done "$provider"; then
 				debug 4 "Adding '$dep_package' (provides) to ended (list)"
 				package_ended="$package_ended$NL$provider"
@@ -676,7 +668,8 @@ process_pseudo() {
 			fi
 		fi
 	else
-		# If there are multiple providing packages, we do not recurse into them!
+		# Note: if there are multiple providing packages, we do
+		# not recurse into them!
 		IFS=,
 		for provider in $providers; do
 			IFS="$IFS_SV"
@@ -699,19 +692,19 @@ process_pseudo() {
 			OR_has_uninst=""
 		fi
 
-		# Only show multiple providing packages if there are $max_providers or less
-		# or when restricted to installed packages
+		# Only show multiple providing packages if there are $max_providers
+		# or less, or when restricted to installed packages
 		if [ $prov_cnt -le $max_providers ] || \
 		   ([ "$show_installed" ] && [ "$OR_has_inst" ]); then
 			# Check if we already have these (exact) alternative providers
-			OR_name="$(echo "$OR_virtual_list" | \
+			OR_name="$(echo "$OR_virt_list" | \
 				grep ":$OR_pkgs${OR_has_uninst:+,...}$" | cut -d: -f1)"
 			if [ -z "$OR_name" ]; then
-				OR_virtual_cnt=$(($OR_virtual_cnt + 1))
-				OR_name=virt$OR_virtual_cnt
+				OR_virt_cnt=$(($OR_virt_cnt + 1))
+				OR_name=virt$OR_virt_cnt
 
 				debug 3 "Providers: new set '$OR_name' - $OR_pkgs"
-				OR_virtual_list="$OR_virtual_list$OR_name:$OR_has_inst:$OR_pkgs${OR_has_uninst:+,...}$NL"
+				OR_virt_list="$OR_virt_list$OR_name:$OR_has_inst:$OR_pkgs${OR_has_uninst:+,...}$NL"
 			else
 				debug 3 "Providers: matches existing set '$OR_name'"
 			fi
@@ -724,8 +717,8 @@ process_pseudo() {
 		fi
 	fi
 
-	# Green arrow sufficiently identifies pseudo package that is part of alternatives
-	if [ -z "$predep_OR_name" ] || check_list OR_seen "$package"; then
+	# Green arrow sufficiently identifies virtual package that is part of alternatives
+	if [ -z "$prevdep_OR_name" ] || check_list OR_seen "$package"; then
 		echo -e "\t\"$package\" [shape=octagon];"
 	fi
 }
@@ -733,8 +726,8 @@ process_pseudo() {
 process_missing() {
 	local package=$1
 
-	local prior_OR_name="$(get_prior_OR_name $package)"
-	if [ -z "$prior_OR_name" ]; then
+	local prior_OR_dep="$(get_prior_OR_dep $package)"
+	if [ -z "$prior_OR_dep" ]; then
 		echo -e "\t\"$package\" [style=filled,fillcolor=oldlace];"
 	else
 		package_unknown="$package_unknown$package$NL"
@@ -745,7 +738,7 @@ process_package() {
 	local level=$1
 	local package=$2
 	local dep_tree="$3"
-	local predep_OR_name="$4"
+	local prevdep_OR_name="$4"
 	local ptype="$5"
 	local pinfo providers deps
 
@@ -782,8 +775,13 @@ process_package() {
 	# Not sure if we should do this or not when showing dependency paths
 	providers=$(get_deps "$pinfo" Provided-By)
 	if [ -z "$want_dep" ] && [ "$providers" ]; then
-		process_pseudo $level $package \
-			"$providers" "$dep_tree" "$predep_OR_name" "$ptype"
+		# For leaf packages we need to check if it was an alternative
+		if [ "$ptype" = L ]; then
+			prevdep_OR_name="$(get_prior_OR_dep $package)"
+		fi
+
+		process_virtual $level $package \
+			"$providers" "$dep_tree" "$prevdep_OR_name" "$ptype"
 	fi
 
 	[ ! "$ptype" = L ] || return 0
@@ -796,24 +794,24 @@ process_package() {
 	fi
 
 	deps=$(get_deps "$pinfo" Pre-Depends)
-	process_deps $level $package "$deps" PD "$dep_tree" "$predep_OR_name"
+	process_deps $level $package "$deps" PD "$dep_tree" "$prevdep_OR_name"
 
 	deps=$(get_deps "$pinfo" Depends)
-	process_deps $level $package "$deps" D "$dep_tree" "$predep_OR_name"
+	process_deps $level $package "$deps" D "$dep_tree" "$prevdep_OR_name"
 
 	if [ "$with_recommends" ]; then
 		deps=$(get_deps "$pinfo" Recommends)
-		process_deps $level $package "$deps" R "$dep_tree" "$predep_OR_name"
+		process_deps $level $package "$deps" R "$dep_tree" "$prevdep_OR_name"
 	fi
 
 	if [ "$with_suggests" ]; then
 		deps=$(get_deps "$pinfo" Suggests)
-		process_deps $level $package "$deps" S "$dep_tree" "$predep_OR_name"
+		process_deps $level $package "$deps" S "$dep_tree" "$prevdep_OR_name"
 	fi
 
 	if [ "$with_conflicts" ]; then
 		deps=$(get_deps "$pinfo" Conflicts)
-		process_deps $level $package "$deps" C "$dep_tree" "$predep_OR_name"
+		process_deps $level $package "$deps" C "$dep_tree" "$prevdep_OR_name"
 	fi
 
 	# Include Provides only for the requested package itself
@@ -823,13 +821,13 @@ process_package() {
 			IFS=,
 			for provided in $provides; do
 				IFS="$IFS_SV"
-				process_pseudo $level $provided $package "$dep_tree" "" L
+				process_virtual $level $provided $package "$dep_tree" "" L
 			done
 		fi
 	fi
 
 	if [ "$show_installed" ] && is_installed $package && \
-	   [ -z "$(get_prior_OR_name $package)" ]; then
+	   [ -z "$(get_prior_OR_dep $package)" ]; then
 		mark_installed "$package"
 	fi
 
@@ -846,10 +844,10 @@ package_done=""
 package_leaf=""
 package_unknown=""
 package_OR_seen=""
-OR_cnt=0
-OR_list=""
+OR_dep_cnt=0
+OR_dep_list=""
 OR_virt_cnt=0
-OR_virtual_list=""
+OR_virt_list=""
 
 # Import lists to limit processing:
 # - "skip" packages are completely ignored: nothing is displayed
@@ -887,8 +885,8 @@ fi
 # ptype B/S indicates "start" binary/source package
 process_package 1 $requested_package $requested_package "" $ptype
 
-# For packages we did not yet recurse through, check if they are pseudo packages
-# as we want to show the providing package(s)
+# For packages we did not yet recurse through, check if they are virtual
+# packages as we want to show the providing package(s)
 info 2 "Processing leaf packages"
 for dep_package in $package_leaf; do
 	if ! check_list done "$dep_package"; then
@@ -900,14 +898,14 @@ if [ -z "$want_dep" ]; then
 	info 2 "Final processing for graph"
 	# Print record definitions for alternatives
 	IFS="$NL"
-	for altrec in $OR_list; do
+	for altrec in $OR_dep_list; do
 		IFS="$IFS_SV"
 		print_alternatives D "$altrec"
 	done
 
 	# Print record definitions for alternative provides
 	IFS="$NL"
-	for altrec in $OR_virtual_list; do
+	for altrec in $OR_virt_list; do
 		IFS="$IFS_SV"
 		print_alternatives P "$altrec"
 	done
