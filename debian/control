@@ -3,13 +3,13 @@ Section: utils
 Priority: optional
 Maintainer: Frans Pop <fjp@debian.org>
 Build-Depends: debhelper (>= 5)
-Standards-Version: 3.7.2
+Standards-Version: 3.8.3
 Homepage: http://alioth.debian.org/~fjp/debtree/
 Vcs-Git: git://git.debian.org/~fjp/debtree.git
 
 Package: debtree
 Architecture: all
-Depends: ${misc:Depends}, ucf (>= 0.28), dctrl-tools
+Depends: ${misc:Depends}, ucf, dctrl-tools
 Recommends: graphviz
 Description: Show relationships between packages (.deb)
  debtree has two functions:
