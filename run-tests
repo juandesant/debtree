@@ -82,3 +82,18 @@ echo "$testset" | while read outfile package opts; do
 		fi
 	fi
 done
+
+# Also generate the comparison graphs from apt-cache
+if [ "web" ]; then
+	for package in debconf aptitude; do
+		outfile=${package}0
+		apt-cache dotty $package >$target/$outfile.dot
+		for format in ps png svg; do
+			dot -T$format -o "$target/$outfile.$format" \
+				$target/$outfile.dot
+		done
+		# Generate thumbnail; from SVG gives best quality
+		convert $target/$outfile.svg -thumbnail 400 \
+			$target/thumbs/$outfile.png
+	done
+fi
