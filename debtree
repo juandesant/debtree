@@ -509,31 +509,28 @@ process_deps() {
 				IFS="$IFS_SV"
 
 				dep_package=${dep_or%% *}
-				if [ "$show_installed" ]; then
-					if is_installed $dep_package; then
-						if check_list skip "$dep_package"; then
-							add_skipped "$dep_package"
-							OR_has_skip=1
+				if check_list skip "$dep_package"; then
+					add_skipped "$dep_package"
+					OR_has_skip=1
+					# Account for installation status
+					if [ "$show_installed" ]; then
+						if is_installed $dep_package; then
+							OR_has_inst=1
 						else
-							OR_pkgs="${OR_pkgs:+$OR_pkgs,}$dep_package"
+							OR_has_uninst=1
 						fi
-						OR_has_inst=1
-					else
-						if check_list skip "$dep_package"; then
-							add_skipped "$dep_package"
-							OR_has_skip=1
-						else
-							OR_uninst="${OR_uninst:+$OR_uninst,}$dep_package"
-						fi
-						OR_has_uninst=1
 					fi
+					continue
+				fi
+
+				if [ -z "$show_installed" ]; then
+					OR_pkgs="${OR_pkgs:+$OR_pkgs,}$dep_package"
+				elif is_installed $dep_package; then
+					OR_pkgs="${OR_pkgs:+$OR_pkgs,}$dep_package"
+					OR_has_inst=1
 				else
-					if check_list skip "$dep_package"; then
-						add_skipped "$dep_package"
-						OR_has_skip=1
-					else
-						OR_pkgs="${OR_pkgs:+$OR_pkgs,}$dep_package"
-					fi
+					OR_uninst="${OR_uninst:+$OR_uninst,}$dep_package"
+					OR_has_uninst=1
 				fi
 			done
 			# If none of the alternatives is installed, show them all
