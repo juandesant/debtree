@@ -354,7 +354,7 @@ print_dot_OR_main() {
 		echo -n "<$package> ?$package?"
 	elif check_list skip "$package"; then
 		echo -n "<$package> ($package)"
-	elif [ "$seen" = 2 ] || check_list ended "$package"; then
+	elif [ "$seen" = 2 ]; then
 		echo -n "<$package> \{$package\}"
 	elif [ "$seen" = 1 ]; then
 		echo -n "<$package> [$package]"
@@ -372,7 +372,7 @@ print_alternatives() {
 	local OR_has_inst="$(echo "$altrec" | cut -d: -f2)"
 	local OR_pkgs="$(echo "$altrec" | cut -d: -f3-)"
 
-	first="1"
+	first=1
 	print_dot_OR_header $type "$OR_name" "$OR_has_inst"
 	for package in $(echo $OR_pkgs | sed "s/,/ /g"); do
 		# Is this package also part of an earlier set of alternatives?
@@ -383,7 +383,12 @@ print_alternatives() {
 			t_altrec="$(echo "$OR_dep_list" | \
 				    grep -E "(:|,)$package(,|$)" | head -n1)"
 			if [ $type = D ]; then
-				[ "$t_altrec" = "$altrec" ] || seen=1
+				if check_list end "$package" || \
+				   check_list ended "$package"; then
+					seen=2
+				elif [ "$t_altrec" != "$altrec" ]; then
+					seen=1
+				fi
 			else
 				if [ "$t_altrec" ]; then
 					seen=1
