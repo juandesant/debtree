@@ -1,8 +1,11 @@
 debtree (0.7.3) UNRELEASED; urgency=low
 
   * debian/control: add Vcs-Git field.
+  * Fix a few corner where provides and alternatives were not displayed
+    correctly for skip or end packages. There's a minor change in the way
+    alternatives containing skipped packages are displayed.
 
- -- Frans Pop <fjp@debian.org>  Sat, 01 Dec 2007 08:12:20 +0100
+ -- Frans Pop <fjp@debian.org>  Sun, 06 Sep 2009 11:24:50 +0200
 
 debtree (0.7.2) UNRELEASED; urgency=low
 
