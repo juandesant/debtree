@@ -352,8 +352,6 @@ print_dot_OR_main() {
 		echo -n "<other> ..."
 	elif check_list unknown "$package"; then
 		echo -n "<$package> ?$package?"
-	elif check_list skip "$package"; then
-		echo -n "<$package> ($package)"
 	elif [ "$seen" = 2 ]; then
 		echo -n "<$package> \{$package\}"
 	elif [ "$seen" = 1 ]; then

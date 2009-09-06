@@ -232,9 +232,10 @@ graphs. This is done using two lists:
 List of \fIskip packages\fP. Packages included in this list are completely
 excluded from graphs. The list should only contain dependencies that are so
 common that including them in graphs only clutters the graph and does not
-really add any information. Examples are libc6 and zlib1g. If a skip package
-is listed as an alternative dependency, it will be shown with the package name
-between parentheses: `(...)'.
+really add any information. Examples are libc6 and zlib1g. If an alternative
+dependency contains only skip packages it will be omitted; if it contains a mix
+of skip and non-skip packages, the presence of the skip packages will be shown
+using an ellipsis ('...').
 .IP "/etc/debtree/endlist, ~/.debtree/endlist"
 List of \fIend packages\fP. Packages included in this list are shown in the
 graph, but their dependencies will not be shown. A diamond shape is used to
