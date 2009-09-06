@@ -641,8 +641,7 @@ process_virtual() {
 	prov_cnt=$(echo "$providers" | sed "s/,/\n/g" | wc -l)
 	if [ $prov_cnt -eq 1 ]; then
 		provider=${providers%% *}
-
-		if check_list skip "$provider"; then
+		if [ $level -ne 1 ] && check_list skip "$provider"; then
 			add_skipped "$provider"
 		else
 			prior_OR_dep="$(get_prior_OR_dep $provider)"
