@@ -68,7 +68,7 @@ digraph "clamav" {
 		shape = "record"
 		style = "filled"
 		fillcolor = "honeydew"
-		label = "<debconf> debconf | <other> ..."
+		label = "<debconf> \{debconf\} | <other> ..."
 	]
 	"libclamunrar6" [shape = diamond];
 	"dpkg" [shape = diamond];

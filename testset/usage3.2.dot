@@ -62,7 +62,7 @@ digraph "pidentd" {
 		shape = "record"
 		style = "filled"
 		fillcolor = "honeydew"
-		label = "<debconf> debconf | <other> ..."
+		label = "<debconf> \{debconf\} | <other> ..."
 	]
 	alt2 [
 		shape = "record"

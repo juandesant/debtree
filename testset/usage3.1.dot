@@ -48,7 +48,7 @@ digraph "pidentd" {
 	"ident-server" [shape=octagon];
 	alt1 [
 		shape = "record"
-		label = "<debconf> debconf | <debconf-2.0> debconf-2.0"
+		label = "<debconf> \{debconf\} | <debconf-2.0> debconf-2.0"
 	]
 	alt2 [
 		shape = "record"
