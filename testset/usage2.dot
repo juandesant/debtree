@@ -1,18 +1,23 @@
 digraph "clamav" {
 	rankdir=LR;
 	node [shape=box];
-	"clamav" -> "libclamav2" [color=blue,label="(>= 0.91.2)"];
-	"libclamav2" -> "libbz2-1.0" [color=blue];
+	"clamav" -> "libbz2-1.0" [color=blue];
 	"libbz2-1.0" [style=filled,fillcolor=honeydew];
-	"libclamav2" -> "libgmp3c2" [color=blue];
-	"libgmp3c2" -> "libgmp3" [color=red];
-	"libgmp3c2" [style=filled,fillcolor=honeydew];
+	"clamav" -> "libclamav6" [color=blue,label="(>= 0.95.2+dfsg)"];
+	"libclamav6" -> "libbz2-1.0" [color=blue];
+	"libclamav6" -> "libltdl3" [color=blue,label="(>= 1.5.2-2)"];
+	"libltdl3" [style=filled,fillcolor=honeydew];
+	"libclamav6" -> "libtommath0" [color=blue];
+	"libclamav6" -> "libclamunrar6" [style=dotted];
+	"clamav" -> "libltdl3" [color=blue,label="(>= 1.5.2-2)"];
+	"clamav" -> "libtommath0" [color=blue];
 	"clamav" -> "alt1" [color=blue];
 	"alt1":"clamav-freshclam" -> "alt2":"debconf" [color=blue,label="(>= 0.5)"];
-	"alt1":"clamav-freshclam" -> "clamav-base" [color=blue,label="(>= 0.91.2-3)"];
+	"alt1":"clamav-freshclam" -> "clamav-base" [color=blue,label="(>= 0.95.2+dfsg-1~volatile1)"];
 	"clamav-base" -> "alt2":"debconf" [color=blue,label="(>= 0.5)"];
 	"clamav-base" -> "adduser" [color=blue];
 	"adduser" -> "perl-base" [color=blue,label="(>= 5.6.0)"];
+	"perl-base" -> "dpkg" [color=purple,style=bold,label="(>= 1.14.20)"];
 	"perl-base" -> "perl" [style=dotted];
 	"perl-base" [style=filled,fillcolor=honeydew];
 	"adduser" -> "passwd" [color=blue,label="(>= 1:4.0.12)"];
@@ -20,22 +25,23 @@ digraph "clamav" {
 	"adduser" -> "liblocale-gettext-perl" [style=dotted];
 	"adduser" -> "perl-modules" [style=dotted];
 	"adduser" [style=filled,fillcolor=honeydew];
-	"clamav-base" -> "ucf" [color=blue,label="(>= 0.28)"];
+	"clamav-base" -> "ucf" [color=blue];
 	"clamav-base" -> "logrotate" [color=blue];
 	"clamav-base" -> "clamav";
-	"alt1":"clamav-freshclam" -> "libclamav2" [color=blue,label="(>= 0.91.2)"];
-	"alt1":"clamav-freshclam" -> "debianutils" [color=blue,label="(>= 1.6)"];
-	"debianutils" [style=filled,fillcolor=honeydew];
-	"alt1":"clamav-freshclam" -> "ucf" [color=blue,label="(>= 0.28)"];
+	"alt1":"clamav-freshclam" -> "libbz2-1.0" [color=blue];
+	"alt1":"clamav-freshclam" -> "libclamav6" [color=blue,label="(>= 0.95.2+dfsg)"];
+	"alt1":"clamav-freshclam" -> "libltdl3" [color=blue,label="(>= 1.5.2-2)"];
+	"alt1":"clamav-freshclam" -> "libtommath0" [color=blue];
+	"alt1":"clamav-freshclam" -> "ucf" [color=blue];
 	"alt1":"clamav-freshclam" -> "logrotate" [color=blue];
-	"alt1":"clamav-freshclam" -> "lsb-base" [color=blue,label="(>> 3.0)"];
+	"alt1":"clamav-freshclam" -> "lsb-base" [color=blue,label="(>= 3.2-13)"];
 	"lsb-base" -> "sed" [color=blue];
 	"sed" [style=filled,fillcolor=honeydew];
 	"lsb-base" -> "ncurses-bin" [color=blue];
 	"ncurses-bin" -> "libncurses5" [color=purple,style=bold,label="(>= 5.6+20071006-3)"];
-	"libncurses5" -> "libgpmg1";
-	"libgpmg1" -> "gpm" [style=dotted];
-	"libgpmg1" [style=filled,fillcolor=honeydew];
+	"libncurses5" -> "libgpm2";
+	"libgpm2" -> "gpm" [style=dotted];
+	"libgpm2" [style=filled,fillcolor=honeydew];
 	"libncurses5" [style=filled,fillcolor=honeydew];
 	"ncurses-bin" -> "ncurses" [color=red];
 	"ncurses-bin" -> "tput" [color=red];
@@ -43,20 +49,17 @@ digraph "clamav" {
 	"lsb-base" [style=filled,fillcolor=honeydew];
 	"alt1":"clamav-freshclam" -> "clamav-docs" [style=dotted];
 	"alt1":"clamav-freshclam" -> "alt1":"clamav-data" [color=red];
+	"alt1":"clamav-freshclam" -> "libclamav2" [color=red];
+	"alt1":"clamav-freshclam" -> "libclamav3" [color=red];
 	"alt1":"clamav-data" -> "alt2":"debconf" [color=blue,label="(>= 0.5)"];
 	"alt1":"clamav-data" -> "alt1":"clamav-freshclam" [color=red];
-	"clamav" -> "arj";
-	"clamav" -> "unzoo";
 	"clamav" -> "clamav-base";
-	"clamav" -> "unrar" [style=dotted,label="(>= 3.0-1)"];
-	"clamav" -> "lha" [style=dotted];
 	"clamav" -> "clamav-docs" [style=dotted];
-	"libgmp3" [style=filled,fillcolor=oldlace];
+	"libclamunrar6" [style=filled,fillcolor=oldlace];
 	"ncurses" [style=filled,fillcolor=oldlace];
 	"tput" -> "ncurses-bin" [dir=back,arrowtail=inv,color=green];
 	"tput" [shape=octagon];
-	"unrar" [style=filled,fillcolor=oldlace];
-	"lha" [style=filled,fillcolor=oldlace];
+	"libclamav3" [style=filled,fillcolor=oldlace];
 	alt1 [
 		shape = "record"
 		label = "<clamav-freshclam> clamav-freshclam | <clamav-data> clamav-data"
@@ -67,6 +70,9 @@ digraph "clamav" {
 		fillcolor = "honeydew"
 		label = "<debconf> debconf | <other> ..."
 	]
+	"libclamunrar6" [shape = diamond];
+	"dpkg" [shape = diamond];
+	"dpkg" [style=filled,fillcolor=honeydew];
 	"perl" [shape = diamond];
 	"perl" [style=filled,fillcolor=honeydew];
 	"passwd" [shape = diamond];
@@ -81,7 +87,5 @@ digraph "clamav" {
 	"logrotate" [style=filled,fillcolor=honeydew];
 	"gpm" [shape = diamond];
 	"clamav-docs" [shape = diamond];
-	"unrar" [shape = diamond];
-	"lha" [shape = diamond];
 	"clamav-docs" [shape = diamond];
 }

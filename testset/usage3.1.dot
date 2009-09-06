@@ -6,28 +6,28 @@ digraph "pidentd" {
 	"alt1":"debconf-2.0" -> virt1 [dir=back,arrowtail=inv,color=green];
 	"libssl0.9.8" -> "libssl" [color=red];
 	"pidentd" -> "netbase" [color=blue];
-	"netbase" -> "ifupdown" [color=blue,label="(>= 0.6.4-4.9)"];
-	"ifupdown" -> "net-tools" [color=blue];
-	"ifupdown" -> "alt1":"debconf" [color=blue,label="(>= 1.2.0)"];
-	"ifupdown" -> "lsb-base" [color=blue];
+	"netbase" -> "lsb-base" [color=blue,label="(>= 3.0-6)"];
 	"lsb-base" -> "sed" [color=blue];
 	"lsb-base" -> "ncurses-bin" [color=blue];
 	"ncurses-bin" -> "libncurses5" [color=purple,style=bold,label="(>= 5.6+20071006-3)"];
-	"libncurses5" -> "libgpmg1";
+	"libncurses5" -> "libgpm2";
 	"ncurses-bin" -> "ncurses" [color=red];
 	"ncurses-bin" -> "tput" [color=red];
-	"netbase" -> "lsb-base" [color=blue,label="(>= 3.0-6)"];
+	"netbase" -> "ifupdown";
+	"ifupdown" -> "net-tools" [color=blue];
+	"ifupdown" -> "lsb-base" [color=blue];
 	"pidentd" -> "adduser" [color=blue];
 	"adduser" -> "perl-base" [color=blue,label="(>= 5.6.0)"];
+	"perl-base" -> "dpkg" [color=purple,style=bold,label="(>= 1.14.20)"];
 	"adduser" -> "passwd" [color=blue,label="(>= 1:4.0.12)"];
 	"adduser" -> "alt1" [color=blue];
 	"pidentd" -> "passwd" [color=blue];
 	"pidentd" -> "update-inetd" [color=blue];
 	"update-inetd" -> "alt1" [color=blue];
 	"pidentd" -> "alt2" [color=blue];
-	"alt2":"openbsd-inetd" -> "libwrap0" [color=blue];
+	"alt2":"openbsd-inetd" -> "libwrap0" [color=blue,label="(>= 7.6-4~)"];
 	"libwrap0" -> "tcpd";
-	"tcpd" -> "libwrap0" [color=blue];
+	"tcpd" -> "libwrap0" [color=blue,label="(>= 7.6-4~)"];
 	"tcpd" -> "alt1":"debconf" [color=blue,label="(>= 0.5)"];
 	"alt2":"openbsd-inetd" -> "lsb-base" [color=blue,label="(>= 3.0-10)"];
 	"alt2":"openbsd-inetd" -> "update-inetd" [color=blue];
@@ -41,6 +41,8 @@ digraph "pidentd" {
 	"ncurses" [style=filled,fillcolor=oldlace];
 	"tput" -> "ncurses-bin" [dir=back,arrowtail=inv,color=green];
 	"tput" [shape=octagon];
+	"netkit-inetd" -> virt3 [dir=back,arrowtail=inv,color=green];
+	"netkit-inetd" [shape=octagon];
 	"ident-server" -> "Pr-ident-server" [label="-7-",dir=back,arrowtail=inv,color=green];
 	"Pr-ident-server" [label="...",style=rounded];
 	"ident-server" [shape=octagon];
@@ -62,5 +64,11 @@ digraph "pidentd" {
 		style = "rounded"
 		label = "<inetutils-inetd> \{inetutils-inetd\} | <openbsd-inetd> [openbsd-inetd] | <rlinetd> \{rlinetd\} | <xinetd> \{xinetd\}"
 	]
+	virt3 [
+		shape = "record"
+		style = "rounded"
+		label = "<inetutils-inetd> \{inetutils-inetd\} | <openbsd-inetd> [openbsd-inetd]"
+	]
+	"dpkg" [shape = diamond];
 	"passwd" [shape = diamond];
 }
