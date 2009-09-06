@@ -14,7 +14,11 @@ if [ "$1" = -w ]; then
 fi
 
 target="$1"
-if [ -z "$screen" ] && [ "$target" ]; then
+if [ -z "$screen" ]; then
+	if [ -z "$target" ]; then
+		echo "Error: target directory not specified"
+		exit 1
+	fi
 	mkdir -p $target
 	if [ "$web" ]; then
 		mkdir -p $target/thumbs
