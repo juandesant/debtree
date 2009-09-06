@@ -31,17 +31,23 @@
 <hr />
 
 <p>
-Shown are: <font color="purple">Pre-Depends</font>, <font color="blue">Depends</font>, unversioned <font color="red">Conflicts</font> and relevant <font color="green">Provides</font>.
+Shown are:
+<font color="purple">Pre-Depends</font>,
+<font color="blue">Depends</font>,
+unversioned <font color="red">Conflicts</font> and
+relevant <font color="green">Provides</font>.
 </p><p>
 This is one of the most basic graphs that can be generated. Only the Conflicts
 and the virtual package <tt>debconf-2.0</tt> that <tt>debconf</tt> provides could
 have been suppressed.
 </p><p>
-<tt>perlapi-5.8.8</tt> is a virtual package provided by <tt>perl-base</tt>.
+<tt>perlapi-5.10.0</tt> is a virtual package provided by <tt>perl-base</tt>.
 A virtual package is only displayed if it are provided by the requested package
 or if it itself is listed as a dependency/conflict from a package in the graph.
 </p><p>
-Some packages, like <tt>libc6</tt> and <tt>zlib1g</tt>, have been excluded from all graphs as so many packages depend on them that they only cause clutter without adding any real information; it would be nice to show them in some other way.
+Some packages, like <tt>libc6</tt> and <tt>zlib1g</tt>, have been excluded from
+all graphs as so many packages depend on them that they only cause clutter without
+adding any real information; it would be nice to show them in some other way.
 </p><p>
 The reddish shade of <tt>debconf-tiny</tt> means that the package is unknown
 (does not exist in the package database).
