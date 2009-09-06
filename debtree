@@ -486,7 +486,8 @@ process_deps() {
 	local dep_tree_in=$5
 	local prevdep_OR_name=$6
 	local IFS dep dep_or dep_package dep_tree pkgdep
-	local OR_pkgs OR_name OR_has_inst OR_has_uninst OR_uninst
+	local OR_name OR_skip OR_pkgs OR_uninst
+	local OR_has_skip OR_has_inst OR_has_uninst OR_has_other
 
 	debug 3 "$level - dependencies for '$package' ($dep_type): $deps"
 
@@ -494,10 +495,13 @@ process_deps() {
 	for dep in $deps; do
 		IFS="$IFS_SV"
 		OR_name=""
+		OR_skip=""
 		OR_pkgs=""
 		OR_uninst=""
+		OR_has_skip=""
 		OR_has_inst=""
 		OR_has_uninst=""
+		OR_has_other=""
 
 		if [ -z "$want_dep" ] && echo $dep | grep -q "|" && \
 		   ([ "$with_alternatives" ] || [ "$show_installed" ]); then
@@ -509,27 +513,45 @@ process_deps() {
 				dep_package=${dep_or%% *}
 				if [ "$show_installed" ]; then
 					if is_installed $dep_package; then
-						OR_pkgs="${OR_pkgs:+$OR_pkgs,}$dep_package"
+						if check_list skip "$dep_package"; then
+							add_skipped "$dep_package"
+							OR_has_skip=1
+						else
+							OR_pkgs="${OR_pkgs:+$OR_pkgs,}$dep_package"
+						fi
 						OR_has_inst=1
 					else
-						OR_uninst="${OR_uninst:+$OR_uninst,}$dep_package"
+						if check_list skip "$dep_package"; then
+							add_skipped "$dep_package"
+							OR_has_skip=1
+						else
+							OR_uninst="${OR_uninst:+$OR_uninst,}$dep_package"
+						fi
 						OR_has_uninst=1
 					fi
 				else
-					OR_pkgs="${OR_pkgs:+$OR_pkgs,}$dep_package"
+					if check_list skip "$dep_package"; then
+						add_skipped "$dep_package"
+						OR_has_skip=1
+					else
+						OR_pkgs="${OR_pkgs:+$OR_pkgs,}$dep_package"
+					fi
 				fi
 			done
-			if [ "$show_installed" ] && [ -z "$OR_pkgs" ]; then
-				# If none of the alternatives is installed, show them all
+			# If none of the alternatives is installed, show them all
+			if [ "$show_installed" ] && [ -z "$OR_has_inst" ]; then
 				OR_pkgs="$OR_uninst"
 				OR_has_uninst=""
 			fi
+			[ "$OR_pkgs" ] || OR_skip=1
 
 			# Create alternative dependency "records" for dot graph
-			if [ "$with_alternatives" ]; then
+			if [ -z "$OR_skip" ] && [ "$with_alternatives" ]; then
+				OR_has_other=$OR_has_skip$OR_has_uninst
+
 				# Check if we already have these (exact) alternatives
 				OR_name="$(echo "$OR_dep_list" | \
-					grep ":$OR_pkgs${OR_has_uninst:+,...}$" | \
+					grep ":$OR_pkgs${OR_has_other:+,...}$" | \
 					cut -d: -f1)"
 				if [ -z "$OR_name" ]; then
 					OR_dep_cnt=$(($OR_dep_cnt + 1))
@@ -546,11 +568,16 @@ process_deps() {
 						fi
 					done
 
-					OR_dep_list="$OR_dep_list$OR_name:$OR_has_inst:$OR_pkgs${OR_has_uninst:+,...}$NL"
+					OR_dep_list="$OR_dep_list$OR_name:$OR_has_inst:$OR_pkgs${OR_has_other:+,...}$NL"
 				else
 					debug 3 "Alternatives: matches existing set '$OR_name'"
 				fi
 			fi
+		fi
+
+		if [ "$OR_skip" ]; then
+			debug 3 "Alternatives: skipping ('$dep')"
+			continue
 		fi
 
 		IFS="|"
