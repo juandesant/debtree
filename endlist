@@ -38,6 +38,7 @@ ucf
 # Development
 gcc
 c-compiler
+cmake
 subversion
 tla
 git git-core
@@ -49,12 +50,18 @@ debiandoc-sgml
 docbook-utils
 
 # Libraries
+libglib2.0-0
 libsdl1.2debian
 
 # Development libraries
 libsdl1.2-dev
 libssl-dev
+libx11-dev
 zlib1g-dev
+
+# KDE development libraries
+libqt4-dev
+kdebase-workspace-dev
 
 # Common (complex) server applications
 exim4
@@ -65,32 +72,55 @@ postgresql postgresql-client
 
 # X.Org
 x11-common
-xfonts-base
+xfonts-base xfonts-utils
 xbase-clients
 xutils
 
 # Common desktop
 alsa-base
+dictionaries-common
 fontconfig libfontconfig1
 defoma
 dbus
+hal
 libfam0
-smbclient
 libnotify1
+libxine1
+pm-utils
+policykit
+samba-common smbclient libsmbclient
+
+# Java
+default-jre default-jre-headless
+openjdk-6-jre
+java-gcj-compat
+gcj-jre
+gij
 
 # KDE
 libqt-rnt
 libqt3-mt
+libqtcore4
+libqtgui4
+libqt4-designer
+libqt4-sql
+kdebase-runtime
 kdelibs4c2a
+kdelibs5
 libarts1c2a
 libkdepim1a
+libkdepim4
 kdebase-kio-plugins
 kdepim-kio-plugins
 kdesktop
 kcontrol
 kaddressbook
+soprano-daemon
 
 # Gnome
+libgnome2-0
+libgnomeui-0
+libgnomevfs2-0
 libgtk2.0-0
 gconf2
 
@@ -104,9 +134,10 @@ texlive-latex-extra
 texlive-fonts-recommended
 
 # Various
-graphviz
-gs-common
-gv
-xpdf-reader
 foomatic-filters
+graphviz
+gs-common gv
 hyperestraier
+openoffice.org-core
+xml-core
+xpdf-reader

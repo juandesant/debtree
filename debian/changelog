@@ -4,6 +4,7 @@ debtree (0.7.3) UNRELEASED; urgency=low
   * Fix a few corner where provides and alternatives were not displayed
     correctly for skip or end packages. There's a minor change in the way
     alternatives containing skipped packages are displayed.
+  * Extend endlist and update for lenny/squeeze.
 
  -- Frans Pop <fjp@debian.org>  Sun, 06 Sep 2009 11:24:50 +0200
 
