@@ -185,6 +185,16 @@ fi
 
 ### FUNCTIONS ###
 
+full_type() {
+	case $1 in
+	   PD)	echo Pre-Depends ;;
+	   D)	echo Depends ;;
+	   R)	echo Recommends ;;
+	   S)	echo Suggests ;;
+	   C)	echo Conflicts ;;
+	esac
+}
+
 import_list() {
 	local file=$1
 
@@ -250,15 +260,9 @@ get_rdeps() {
 	local parent=$3
 	local rdep rdeps
 
-	case $type in
-	   PD)	type=Pre-Depends ;;
-	   D)	type=Depends ;;
-	   R)	type=Recommends ;;
-	esac
-
 	rdeps=""
-	for rdep in $(grep-aptavail -n -s Package \
-			-F $type --eregex "(^| )$package(,| |$)"); do
+	for rdep in $(grep-aptavail -n -s Package -F $(full_type $type) \
+				    --eregex "(^| )$package(,| |$)"); do
 		# Guard against circular deps
 		[ "$rdep" != "$parent" ] || continue
 
@@ -354,7 +358,7 @@ mark_endpackage() {
 	local package=$1
 	if [ -z "$(get_prior_OR_dep $package)" ] && \
 	   ! check_list rdeps $package; then
-		echo -e "\t\"$package\" [shape = diamond];"
+		echo -e "\t\"$package\" [shape=diamond];"
 		if [ "$show_installed" ] && is_installed $package; then
 			mark_installed 0 $package
 		fi
@@ -462,6 +466,7 @@ print_dot_dependency() {
 	local dep_package=$3
 	local dep_type=$4
 	local pkgdep=$5
+	local rdep=$6
 	local opts=""
 	local p_package p_dep_package prior_OR_dep verdep arch_cond
 
@@ -518,7 +523,7 @@ print_dot_dependency() {
 
 	# How can "end" packages that are part of an OR be identified?
 	# For now, marked by using braces in the labels (see print_dot_OR_main)
-	if check_list end "$dep_package" && \
+	if check_list end "$dep_package" &&  [ -z "$rdep" ] && \
 	   [ -z "$OR_name" ] && [ -z "$prior_OR_dep" ] && \
 	   ! check_list done "$dep_package"; then
 		if [ $dep_type != C ]; then
@@ -527,6 +532,67 @@ print_dot_dependency() {
 		fi
 		package_done="$package_done$NL$dep_package"
 	fi
+}
+
+print_rdeps_provides() {
+	local rdep=$1
+	local type=$2
+	local package=$3
+	local pset=$4
+	local pinfo="$5"
+	local dep_or deps dset d p cnt regex
+
+	if ! check_list prov_rdeps $rdep; then
+		debug 4 "Provider rdeps: $rdep - $type - $package - $pset"
+	else
+		debug 4 "Provider rdeps: $rdep is already done"
+		return 0
+	fi
+	package_prov_rdeps="$package_prov_rdeps$NL$rdep"
+
+	regex="$(echo "$pset" | sed "s/ /|/")"
+	deps=$(get_deps "$pinfo" $(full_type $type))
+	IFS=,
+	for dep_or in $deps; do
+		IFS="$IFS_SV"
+		echo "$dep_or" | grep -Eq "(^|\|)($regex)( |$)" || continue
+
+		dset=""
+		cnt=0
+		IFS="|"
+		for d in $dep_or; do
+			IFS="$IFS_SV"
+			d=${d%% *}
+			dset="${dset:+$dset,}$d"
+			cnt=$(($cnt + 1))
+
+			# Packages not in the pset are leaf packages
+			if ! echo " $pset " | grep -q " $d " && \
+			   ! check_list ended $d; then
+				debug 4 "Provider rdeps: adding '$d' to ended (list)"
+				package_ended="$package_ended$NL$d"
+			fi
+		done
+		[ $cnt -gt 1 ] || return 1
+
+		pdep_set_name="$(echo "$pdep_set_list" | \
+			grep ":$dset$" | \
+			cut -d: -f1)"
+		if [ -z "$pdep_set_name" ]; then
+			pdep_set_cnt=$(($pdep_set_cnt + 1))
+			pdep_set_name=pds$pdep_set_cnt
+			debug 3 "Provider rdeps: new set '$pdep_set_name' - $dset"
+			IFS=,
+			for p in $dset; do
+				IFS="$IFS_SV"
+				echo -e "\t\"$pdep_set_name\" -> \"$p\" [style=dotted];"
+			done
+			echo -e "\t\"$pdep_set_name\" [shape=circle,label=or];"
+			pdep_set_list="$pdep_set_list$pdep_set_name:$dset$NL"
+		fi
+		print_dot_dependency $rdep "" $pdep_set_name $type
+	done
+	return 0
 }
 
 process_deps() {
@@ -726,7 +792,7 @@ process_virtual() {
 		else
 			prior_OR_dep="$(get_prior_OR_dep $provider)"
 			p_provider="${prior_OR_dep:+\"$prior_OR_dep\":}\"$provider\""
-			if [ $level -eq 1 ]; then
+			if [ $level -ne 1 ] && [ -z "$show_rdeps" ]; then
 				echo -e "\t$p_provider -> $p_package [arrowhead=inv,color=green];"
 			else
 				echo -e "\t$p_package -> $p_provider [dir=back,arrowtail=inv,color=green];"
@@ -817,7 +883,8 @@ find_rdeps() {
 	local level=$1
 	local package=$2
 	local parent=$3
-	local type rdeps recurse_rdeps cnt opts
+	local provides=$4
+	local type rdeps recurse_rdeps cnt opts pinfo
 	local has_max=""
 
 	info 2 "Level $level: processing reverse dependencies for $package"
@@ -845,9 +912,16 @@ find_rdeps() {
 
 		recurse_rdeps=${recurse_rdeps:+$recurse_rdeps }$rdeps
 		for rdep in $rdeps; do
+			pinfo="$(grep_avail $rdep)" || RET=$?
+			pinfo="$(prep_deps "$pinfo")"
+			if [ "$provides" ] && \
+			   print_rdeps_provides $rdep $type $package "$parent $provides" "$pinfo"; then
+				continue
+			fi
+
 			if ! check_list done $rdep; then
 				debug 4 "$level - adding reverse dependency '$rdep'->'$package'"
-				print_dot_dependency $rdep "" $package $type
+				print_dot_dependency $rdep "" $package $type "" 1
 			else
 				debug 4 "$level - package '$rdep' is already done"
 			fi
@@ -878,7 +952,7 @@ process_package() {
 	local dep_tree="$3"
 	local prevdep_OR_name="$4"
 	local ptype="$5"
-	local pinfo providers deps
+	local p pinfo providers deps
 
 	info 2 "Level $level: processing $package ${ptype:+($ptype)}"
 
@@ -952,25 +1026,27 @@ process_package() {
 		process_deps $level $package "$deps" C "$dep_tree" "$prevdep_OR_name"
 	fi
 
-	# Installed reverse dependencies for the requested package
-	if [ -z "$want_dep" ] && [ "$show_rdeps" ] && [ $level -eq 1 ]; then
-		find_rdeps -1 $package
-	fi
-
-	# Include Provides only for the requested package itself
-	if [ -z "$want_dep" ] && [ "$with_provides" ] && [ $level -eq 1 ]; then
-		provides=$(get_deps "$pinfo" Provides | sed "s/ //g")
-		if [ "$provides" ]; then
-			IFS=,
+	# Provides and reverse dependencies for the requested package
+	if [ -z "$want_dep" ] && [ $level -eq 1 ] &&
+	   ([ "$with_provides" ] || [ "$show_rdeps" ]); then
+		provides=$(get_deps "$pinfo" Provides | sed "s/ //g; s/,/ /g")
+		if [ -z "$with_provides" ] || [ -z "$provides" ]; then
+			if [ "$show_rdeps" ]; then
+				debug 4 "Find rdeps for the package"
+				find_rdeps -1 $package
+			fi
+		elif [ "$provides" ]; then
+			# Virtual packages
 			for provided in $provides; do
-				IFS="$IFS_SV"
 				process_virtual $level $provided $package "$dep_tree" "" L
-				# Installed reverse dependencies for the provided package
-				if [ -z "$want_dep" ] && [ "$show_rdeps" ]; then
-					find_rdeps -1 $provided
-				fi
-
 			done
+			# Installed reverse dependencies for the package and its provides
+			if [ "$show_rdeps" ]; then
+				debug 4 "Find rdeps for the package & its provides"
+				for p in $package $provides; do
+					find_rdeps -1 $p $package "$provides"
+				done
+			fi
 		fi
 	fi
 
@@ -998,6 +1074,8 @@ OR_dep_cnt=0
 OR_dep_list=""
 OR_virt_cnt=0
 OR_virt_list=""
+pdep_set_list=""
+pdep_set_cnt=0
 
 # Import lists to limit processing:
 # - "skip" packages are completely ignored: nothing is displayed
