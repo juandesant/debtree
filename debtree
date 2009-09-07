@@ -72,6 +72,8 @@ with_provides=1
 max_providers=3
 with_versions=1
 show_installed=""
+show_rdeps=""
+max_rdeps=5
 max_depth=""
 no_skip=""
 show_all=""
@@ -106,6 +108,12 @@ while true; do
 		with_versions="" ;;
 	    --show-installed|-I)
 		show_installed=1 ;;
+	    --show-rdeps|-R)
+		show_rdeps=${show_rdeps:-1} ;;
+	    --rdeps-depth=*)
+		show_rdeps=${1#*=} ;;
+	    --max-rdeps=*)
+		max_rdeps=${1#*=} ;;
 	    --max-depth=*)
 		max_depth=${1#*=}
 		if ! echo $max_depth | grep -q "^[1-9][0-9]*$"; then
@@ -153,10 +161,11 @@ done
 [ "$with_conflicts" ] || with_vconflicts=""
 
 # Build-dep implies no-suggests and no-alternatives (unless installed packages
-# are being displayed); recommends are optional
+# are being displayed); recommends are optional; rdeps are not allowed
 if [ "$build_dep" ]; then
 	ptype=S
 	with_suggests=""
+	show_rdeps=""
 	[ "$show_installed" ] || with_alternatives=""
 	with_provides=""
 else
@@ -165,6 +174,13 @@ fi
 
 if [ -z "$requested_package" ]; then
 	error "invalid number of arguments"
+fi
+
+# ToDo: use configurable colors for everything?
+if [ "$show_installed" ]; then
+	rdep_color=azure
+else
+	rdep_color=ivory
 fi
 
 ### FUNCTIONS ###
@@ -228,6 +244,31 @@ get_deps() {
 	echo "$1" | grep "^$2:" | sed "s/^[^:]*: //"
 }
 
+get_rdeps() {
+	local type=$1
+	local package=$2
+	local parent=$3
+	local rdep rdeps
+
+	case $type in
+	   PD)	type=Pre-Depends ;;
+	   D)	type=Depends ;;
+	   R)	type=Recommends ;;
+	esac
+
+	rdeps=""
+	for rdep in $(grep-aptavail -n -s Package \
+			-F $type --eregex "(^| )$package(,| |$)"); do
+		# Guard against circular deps
+		[ "$rdep" != "$parent" ] || continue
+
+		if [ -z "$show_installed" ] || is_installed $rdep; then
+			rdeps=${rdeps:+$rdeps }$rdep
+		fi
+	done
+	echo $rdeps
+}
+
 
 # Convert dependency string a bit for easier parsing:
 # - remove space after ","
@@ -261,7 +302,7 @@ check_arch() {
 	local dep_type="$1"
 	local pkgdep="$2"
 
-	if [ -z "$ARCH" ] ||
+	if [ -z "$ARCH" ] || \
 	   ([ $dep_type != B ] && [ $dep_type != BI ]); then
 		# Echo back full dependency
 		echo "$pkgdep"
@@ -294,16 +335,28 @@ get_prior_OR_dep () {
 }
 
 mark_installed() {
+	local level=$1
+	local package=$2
+	local style=filled
+
+	if [ $level -eq 1 ]; then
+		style="\"setlinewidth(2),$style\""
+	fi
+	echo -e "\t\"$package\" [style=${style},fillcolor=honeydew];"
+}
+
+mark_rdep() {
 	local package=$1
-	echo -e "\t\"$package\" [style=filled,fillcolor=honeydew];"
+	echo -e "\t\"$package\" [style=filled,fillcolor=$rdep_color];"
 }
 
 mark_endpackage() {
 	local package=$1
-	if [ -z "$(get_prior_OR_dep $package)" ]; then
+	if [ -z "$(get_prior_OR_dep $package)" ] && \
+	   ! check_list rdeps $package; then
 		echo -e "\t\"$package\" [shape = diamond];"
 		if [ "$show_installed" ] && is_installed $package; then
-			mark_installed $package
+			mark_installed 0 $package
 		fi
 	fi
 }
@@ -760,6 +813,65 @@ process_missing() {
 	fi
 }
 
+find_rdeps() {
+	local level=$1
+	local package=$2
+	local parent=$3
+	local type rdeps recurse_rdeps cnt opts
+	local has_max=""
+
+	info 2 "Level $level: processing reverse dependencies for $package"
+	package_rdeps="$package_rdeps$NL$package"
+
+	recurse_rdeps=""
+	for type in PD D ${with_recommends:+R}; do
+		rdeps=$(get_rdeps $type $package $parent)
+		cnt=$(echo "$rdeps" | wc -w)
+		if [ $cnt -gt 0 ]; then
+			debug 4 "$level - ${show_installed:+installed }$type rdeps for '$package' ($cnt): $rdeps"
+		fi
+
+		if [ $level -lt -1 ] && [ $cnt -gt $max_rdeps ]; then
+			case $type in
+			   PD)	opts="color=purple,style=bold" ;;
+			   D)	opts="color=blue" ;;
+			   R)	opts="" ;;
+			esac
+			opts=" [label=\"-$cnt-\",$opts]"
+			echo -e "\t\"Rdep-$package\" -> \"$package\" $opts;"
+			has_max=1
+			continue
+		fi
+
+		recurse_rdeps=${recurse_rdeps:+$recurse_rdeps }$rdeps
+		for rdep in $rdeps; do
+			if ! check_list done $rdep; then
+				debug 4 "$level - adding reverse dependency '$rdep'->'$package'"
+				print_dot_dependency $rdep "" $package $type
+			else
+				debug 4 "$level - package '$rdep' is already done"
+			fi
+		done
+	done
+
+	for rdep in $recurse_rdeps; do
+		if ! check_list rdeps $rdep; then
+			if ! check_list done $rdep; then
+				mark_rdep $rdep
+			fi
+			if [ $level -eq -1 ]; then
+				find_rdeps $(($level -1)) $rdep $package
+			elif [ $level -gt -$show_rdeps ]; then
+				find_rdeps $(($level -1)) $rdep
+			fi
+		fi
+	done
+
+	if [ "$has_max" ]; then
+		echo -e "\t\"Rdep-$package\" [label=\"...\",style=\"rounded,filled\",fillcolor=$rdep_color];"
+	fi
+}
+
 process_package() {
 	local level=$1
 	local package=$2
@@ -840,6 +952,11 @@ process_package() {
 		process_deps $level $package "$deps" C "$dep_tree" "$prevdep_OR_name"
 	fi
 
+	# Installed reverse dependencies for the requested package
+	if [ -z "$want_dep" ] && [ "$show_rdeps" ] && [ $level -eq 1 ]; then
+		find_rdeps -1 $package
+	fi
+
 	# Include Provides only for the requested package itself
 	if [ -z "$want_dep" ] && [ "$with_provides" ] && [ $level -eq 1 ]; then
 		provides=$(get_deps "$pinfo" Provides | sed "s/ //g")
@@ -848,13 +965,20 @@ process_package() {
 			for provided in $provides; do
 				IFS="$IFS_SV"
 				process_virtual $level $provided $package "$dep_tree" "" L
+				# Installed reverse dependencies for the provided package
+				if [ -z "$want_dep" ] && [ "$show_rdeps" ]; then
+					find_rdeps -1 $provided
+				fi
+
 			done
 		fi
 	fi
 
 	if [ "$show_installed" ] && is_installed $package && \
 	   [ -z "$(get_prior_OR_dep $package)" ]; then
-		mark_installed "$package"
+		mark_installed $level $package
+	elif [ $level -eq 1 ]; then
+		echo -e "\t\"$package\" [style=\"setlinewidth(2)\"]"
 	fi
 
 	debug 3 "Level $level: processing $package ${ptype:+($ptype)} - done"
