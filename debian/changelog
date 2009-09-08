@@ -2,20 +2,14 @@ debtree (0.8.0) UNRELEASED; urgency=low
 
   * Add support for showing reverse dependencies in graphs.
 
- -- Frans Pop <fjp@debian.org>  Tue, 08 Sep 2009 14:16:39 +0200
-
-debtree (0.7.3) UNRELEASED; urgency=low
-
+  [ Changes in unreleased version 0.7.3 - Sun, 06 Sep 2009 11:24:50 +0200 ]
   * debian/control: add Vcs-Git field.
   * Fix a few corner cases where provides and alternatives were not displayed
     correctly for skip or end packages. There's a minor change in the way
     alternatives containing skipped packages are displayed.
   * Extend endlist and update for lenny/squeeze.
 
- -- Frans Pop <fjp@debian.org>  Sun, 06 Sep 2009 11:24:50 +0200
-
-debtree (0.7.2) UNRELEASED; urgency=low
-
+  [ Changes in unreleased version 0.7.2 - Wed, 24 Oct 2007 16:23:34 +0200 ]
   * Fix informational message listing skipped packages.
   * Don't show packages that provide a pseudo package if they are in the skip
     list.
@@ -28,18 +22,12 @@ debtree (0.7.2) UNRELEASED; urgency=low
   * Add some development/packaging related packages to skip and end lists;
     prompted by build dep graph for asterisk.
 
- -- Frans Pop <fjp@debian.org>  Wed, 24 Oct 2007 16:23:34 +0200
-
-debtree (0.7.1) UNRELEASED; urgency=low
-
+  [ Changes in unreleased version 0.7.1 - Thu, 18 Oct 2007 15:41:11 +0200 ]
   * Print info message with skipped dependencies after generating graph.
   * Split ToDo items out of script into separate file.
   * Add man page.
 
- -- Frans Pop <fjp@debian.org>  Thu, 18 Oct 2007 15:41:11 +0200
-
-debtree (0.7.0) UNRELEASED; urgency=low
-
+  [ Changes in unreleased version 0.7.0 - Tue, 02 Oct 2007 19:24:38 +0200 ]
   * Don't print graph elements for unknown packages when showing dependency
     paths.
   * Move the 'skip' and 'end' lists to configuration files using ucf to
@@ -49,10 +37,7 @@ debtree (0.7.0) UNRELEASED; urgency=low
     complexity of a graph by maximizing the number of times debtree will
     recurse into the next level of dependencies.
 
- -- Frans Pop <fjp@debian.org>  Tue, 02 Oct 2007 19:24:38 +0200
-
-debtree (0.6.0) UNRELEASED; urgency=low
-
+  [ Changes in unreleased version 0.6.0 - Sun, 30 Sep 2007 14:58:37 +0200 ]
   * Add support for generating build dependency graphs. By default a graph for
     the current architecture is generated.
   * Add new option no-conflicts; useful for build dependency graphs.
@@ -74,10 +59,7 @@ debtree (0.6.0) UNRELEASED; urgency=low
   * Add sanity check for presence of dctrl-tools scripts.
     Thanks to Maximilian Attems for the suggestion.
 
- -- Frans Pop <fjp@debian.org>  Sun, 30 Sep 2007 14:58:37 +0200
+  [ Changes in unreleased version 0.5.0 - Fri, 28 Sep 2007 06:28:30 +0200 ]
+  * Initial unofficial release.
 
-debtree (0.5.0) UNRELEASED; urgency=low
-
-  * Initial Release.
-
- -- Frans Pop <fjp@debian.org>  Fri, 28 Sep 2007 06:28:30 +0200
+ -- Frans Pop <fjp@debian.org>  Tue, 08 Sep 2009 14:16:39 +0200
