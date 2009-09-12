@@ -79,9 +79,9 @@ included in the graph using the available command line options.
 
 <p>
 The <tt>debtree</tt> script can be installed using this
-<a href="debtree_0.7.3_all.deb">package</a>
-(<a href="debtree_0.7.3.tar.gz">source</a>,
-<a href="debtree_0.7.3.dsc" type="text/plain">.dsc</a>).
+<a href="debtree_0.8.0_all.deb">package</a>
+(<a href="debtree_0.8.0.tar.gz">source</a>,
+<a href="debtree_0.8.0.dsc" type="text/plain">.dsc</a>).
 It is of course free software (GPL).
 </p><p>
 Its only dependency is <tt>dctrl-tools</tt>; <tt>graphviz</tt> is recommended.
@@ -167,6 +167,8 @@ See the <b>debtree</b>(1) man page for detailed usage information.
 <dl>
 <dt><tt>--show-installed&nbsp;|&nbsp;-I</tt></dt>
 <dd>Show which packages are installed on the system</dd>
+<dt><tt>--show-rdeps&nbsp;|&nbsp;-R</tt></dt>
+<dd>Also show reverse dependencies of the package and any virtual packages it provides</dd>
 <dt><tt>--build-dep&nbsp;|&nbsp;-b</tt></dt>
 <dd>Generate a graph showing build dependencies instead of package dependencies</dd>
 <dt><tt>--arch=&lt;arch&gt;</tt></dt>
@@ -191,6 +193,10 @@ be installed by default)</dd>
 <dd>Include versioned conflicts; by default only unversioned conflicts are shown</dd>
 <dt><tt>--max-depth=&lt;num&gt;</tt></dt>
 <dd>Limit the number of levels of dependencies</dd>
+<dt><tt>--rdeps-depth=&lt;num&gt;</tt></dt>
+<dd>The maximum number of levels for reverse dependencies (default: 1)</dd>
+<dt><tt>--max-rdeps=&lt;num&gt;</tt></dt>
+<dd>Limit the display of indirect reverse dependencies (default: 5)</dd>
 <dt><tt>--no-skip</tt></dt>
 <dd>Also display packages that are suppressed by default (e.g. libc6)</dd>
 <dt><tt>--show-all</tt></dt>
