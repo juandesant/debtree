@@ -53,15 +53,22 @@ $(gen_set aptitude)
 usage1 dpkg -b --arch=all --no-recommends --no-conflicts
 usage2 clamav -I -S
 usage3.1 pidentd --max-providers=5
-usage3.2 pidentd -I"
+usage3.2 pidentd -I
+usage4 apt -I --rdeps-depth=3"
+
+if [ -z "$web" ]; then
+testset="$testset
+test1 tcpd --no-conflicts -I --rdeps-depth=2 --max-rdeps=3"
+test2 libcairo2 --no-conflicts -I --rdeps-depth=20
+fi
 
 echo "$testset" | while read outfile package opts; do
 	echo "Generating $outfile: $opts $package" >&2
 	if [ "$screen" ]; then
-		./debtree $opts $package | dot -Tps | kghostview - &
+		./debtree -q $opts $package | dot -Tps | kghostview - &
 		sleep 10
 	else
-        	./debtree $opts $package >$target/$outfile.dot
+        	./debtree -q $opts $package >$target/$outfile.dot
 		if [ "$web" ]; then
 			for format in ps png svg; do
 				dot -T$format -o "$target/$outfile.$format" \
@@ -84,7 +91,7 @@ echo "$testset" | while read outfile package opts; do
 done
 
 # Also generate the comparison graphs from apt-cache
-if [ "web" ]; then
+if [ "$web" ]; then
 	for package in debconf aptitude; do
 		outfile=${package}0
 		apt-cache dotty $package >$target/$outfile.dot
