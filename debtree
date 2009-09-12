@@ -47,10 +47,6 @@ error() {
 	exit 1
 }
 
-if ! which grep-available grep-aptavail grep-status >/dev/null 2>&1; then
-	error "Missing dependency: please install dctrl-tools"
-fi
-
 ### INITIALIZATION ###
 
 IFS_SV="$IFS"
