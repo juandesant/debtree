@@ -792,7 +792,7 @@ process_virtual() {
 		else
 			prior_OR_dep="$(get_prior_OR_dep $provider)"
 			p_provider="${prior_OR_dep:+\"$prior_OR_dep\":}\"$provider\""
-			if [ $level -ne 1 ] && [ -z "$show_rdeps" ]; then
+			if [ $level -eq 1 ] && [ -z "$show_rdeps" ]; then
 				echo -e "\t$p_provider -> $p_package [arrowhead=inv,color=green];"
 			else
 				echo -e "\t$p_package -> $p_provider [dir=back,arrowtail=inv,color=green];"
