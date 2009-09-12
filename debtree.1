@@ -25,6 +25,10 @@ Dependency \fIgraphs\fP will by default show (pre-)dependencies, recommended
 packages, unversioned conflicts, and virtual packages provided by the requested
 package. Optionally also suggested packages and versioned conflicts can be
 included.
+.PP
+Besides graphs showing regular dependencies, \fBdebtree\fP can also generate
+graphs showing the reverse dependencies of and the build dependencies for a
+package.
 
 .SS Dependency types
 The type of dependency between packages is indicated by a code for dependency
@@ -117,6 +121,18 @@ light green. For alternative dependencies, only installed packages will
 be included (an ellipsis is used to indicate omitted alternatives); for
 unsatisfied alternative dependencies, all alternatives will be included.
 
+.IP "\fB\-\-show-rdeps\fP, \fB\-R\fP (graphs only)"
+Also show reverse dependencies of the package and any virtual packages it
+provides.
+
+Reverse dependencies that are not installed will be colored light yellow;
+installed ones light blue. Displaying reverse dependencies of type Suggests
+is not supported.
+
+Use of the option \-\-show\-installed in combination with this option is
+recommended. See also the options \-\-rdeps\-depth and \-\-max\-rdeps.
+This option is ignored if \-\-build\-dep is also specified.
+
 .IP "\fB\-\-build\-dep\fP, \fB\-b\fP"
 Show build dependencies instead of package dependencies.
 
@@ -181,6 +197,19 @@ as \fIend packages\fP (see section CONFIGURATION below).
 
 The option can be used both to reduce the size of graphs and to limit the search
 depth when listing dependency paths.
+
+.IP "\fB\-\-rdeps\-depth\fP=\fInumber\fP"
+The maximum number of levels for reverse dependencies.
+
+By default only one level is displayed. Use this option to display more levels.
+Implies \-\-show\-rdeps.
+
+.IP "\fB\-\-max\-rdeps\fP=\fInumber\fP"
+Limit the display of indirect reverse dependencies.
+
+When displaying multiple levels of reverse dependencies, a reverse dependency
+that itself has a lot of reverse dependencies can really explode the graph.
+By default up to 5 indirect reverse dependencies are shown individually.
 
 .IP "\fB\-\-no\-skip\fP (graphs only)"
 Also display dependencies that are suppressed by default (e.g. libc6).
