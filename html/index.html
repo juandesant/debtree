@@ -31,9 +31,9 @@ To make a long story short, after the basic functionality had been implemented,
 it turned out to be fairly easy (and irresistible) to extend the functionality
 bit by bit.
 </p><p>
-So now we have a script that can show dependency paths between packages and
-can also generate dependency graphs in the form of <tt>.dot</tt> files that
-serve as input for <tt>dot</tt> (from the <tt>graphviz</tt> package).
+So now we have a script that can generate dependency graphs in the form of
+<tt>.dot</tt> files that serve as input for <tt>dot</tt> (from the
+<tt>graphviz</tt> package).
 </p><p>
 The commands <tt>apt-cache</tt> and <tt>apt-rdepends</tt> have similar options,
 but <tt>debtree</tt> is a lot more powerful.
@@ -135,11 +135,6 @@ $ debtree dpkg
 <hr />
 <img src="thumbs/dpkg.png" alt="Dependency graph for dpkg" />
 <hr />
-<pre>
-$ debtree dpkg libattr1
-dpkg -> coreutils (PD) -> libacl1 (PD) -> libattr1 (D)
-</pre>
-<hr />
 
 <h3 id="usage">Usage</h3>
 
@@ -151,8 +146,6 @@ See the <b>debtree</b>(1) man page for detailed usage information.
 <b>Examples</b>
 </p>
 <ul>
-<li><b>Show the dependency path between two packages</b><br />
-<tt>$ debtree &lt;package1&gt; &lt;package2&gt;</tt></li>
 <li><b>Create a <tt>.dot</tt> file</b><br />
 <tt>$ debtree --with-suggests &lt;package&gt; &gt;out.dot</tt></li>
 <li><b>Create a graph (PNG) from a <tt>.dot</tt> file</b><br />
