@@ -116,7 +116,7 @@ while true; do
 		max_rdeps=${1#*=} ;;
 	    --max-depth=*)
 		max_depth=${1#*=}
-		if ! echo $max_depth | grep -q "^[1-9][0-9]*$"; then
+		if ! echo $max_depth | grep -Eq "^[0-9]+$"; then
 			error "invalid value for option 'max-depth'"
 		fi ;;
 	    --no-skip)
@@ -606,6 +606,7 @@ process_deps() {
 	local OR_name OR_skip OR_pkgs OR_uninst
 	local OR_has_skip OR_has_inst OR_has_uninst OR_has_other
 
+	[ $max_depth -ne 0 ] || return 0
 	debug 3 "$level - dependencies for '$package' ($dep_type): $deps"
 
 	IFS=,
