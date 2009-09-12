@@ -126,12 +126,10 @@ digraph "aptitude" {
 	"libxml-libxml-common-perl" -> "perlapi-5.10.0" [color=blue];
 	"libxml-libxml-common-perl" -> "libxml2" [color=blue,label="(>= 2.6.27)"];
 	"libxml2" -> "xml-core";
-	"xml-core" -> "sgml-base" [color=blue,label="(>= 1.17)"];
-	"sgml-base" -> "perl" [color=blue];
-	"xml-core" -> "sed" [color=blue,label="(>= 4.1.2-8)"];
 	"alt2":"libxml-libxml-perl" -> "libxml-namespacesupport-perl" [color=blue,label="(>= 1.07)"];
 	"alt2":"libxml-libxml-perl" -> "libxml-sax-perl" [color=blue,label="(>= 0.11)"];
 	"alt2":"libxml-libxml-perl" -> "libxml2" [color=blue,label="(>= 2.6.27)"];
+	"aptitude" [style="setlinewidth(2)"]
 	"libsigc++-1.9-0" [style=filled,fillcolor=oldlace];
 	"libsigc++-2.0-0" [style=filled,fillcolor=oldlace];
 	"libsigc++-2.0-0c2" [style=filled,fillcolor=oldlace];
@@ -149,8 +147,11 @@ digraph "aptitude" {
 		shape = "record"
 		label = "<libxml-libxml-perl> libxml-libxml-perl | <libxml-sax-expat-perl> [libxml-sax-expat-perl]"
 	]
-	"apt" [shape = diamond];
-	"perl" [shape = diamond];
-	"dpkg" [shape = diamond];
-	"ucf" [shape = diamond];
+	"apt" [shape=diamond];
+	"perl" [shape=diamond];
+	"dpkg" [shape=diamond];
+	"ucf" [shape=diamond];
+	"xml-core" [shape=diamond];
 }
+// Excluded dependencies:
+// libc6 libgcc1 libstdc++6 zlib1g

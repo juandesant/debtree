@@ -37,6 +37,7 @@ digraph "pidentd" {
 	"pidentd" -> "ident-server" [color=red];
 	"pidentd" -> "ident-server" [arrowhead=inv,color=green];
 	"ident-server" [shape=octagon];
+	"pidentd" [style="setlinewidth(2)"]
 	"libssl" [style=filled,fillcolor=oldlace];
 	"ncurses" [style=filled,fillcolor=oldlace];
 	"tput" -> "ncurses-bin" [dir=back,arrowtail=inv,color=green];
@@ -69,6 +70,8 @@ digraph "pidentd" {
 		style = "rounded"
 		label = "<inetutils-inetd> \{inetutils-inetd\} | <openbsd-inetd> [openbsd-inetd]"
 	]
-	"dpkg" [shape = diamond];
-	"passwd" [shape = diamond];
+	"dpkg" [shape=diamond];
+	"passwd" [shape=diamond];
 }
+// Excluded dependencies:
+// libc6 zlib1g

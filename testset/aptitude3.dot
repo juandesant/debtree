@@ -136,16 +136,12 @@ digraph "aptitude" {
 	"libxml-libxml-common-perl" -> "perlapi-5.10.0" [color=blue];
 	"libxml-libxml-common-perl" -> "libxml2" [color=blue];
 	"libxml2" -> "xml-core";
-	"xml-core" -> "sgml-base" [color=blue];
-	"sgml-base" -> "perl" [color=blue];
-	"sgml-base" -> "sgml-base-doc" [style=dotted];
-	"xml-core" -> "sed" [color=blue];
-	"xml-core" -> "debhelper" [style=dotted];
 	"libxml-libxml-perl" -> "libxml-namespacesupport-perl" [color=blue];
 	"libxml-libxml-perl" -> "libxml-sax-perl" [color=blue];
 	"libxml-libxml-perl" -> "libxml2" [color=blue];
 	"aptitude" -> "tasksel" [style=dotted];
 	"aptitude" -> "debtags" [style=dotted];
+	"aptitude" [style="setlinewidth(2)"]
 	"libsigc++-1.9-0" [style=filled,fillcolor=oldlace];
 	"libsigc++-2.0-0" [style=filled,fillcolor=oldlace];
 	"libsigc++-2.0-0c2" [style=filled,fillcolor=oldlace];
@@ -155,20 +151,21 @@ digraph "aptitude" {
 	"ncurses" [style=filled,fillcolor=oldlace];
 	"tput" -> "ncurses-bin" [dir=back,arrowtail=inv,color=green];
 	"tput" [shape=octagon];
-	"apt" [shape = diamond];
-	"gpm" [shape = diamond];
-	"libcwidget-dev" [shape = diamond];
-	"xapian-tools" [shape = diamond];
-	"perl" [shape = diamond];
-	"dpkg" [shape = diamond];
-	"libipc-sharedcache-perl" [shape = diamond];
-	"ucf" [shape = diamond];
-	"iproute" [shape = diamond];
-	"dhcp3-client" [shape = diamond];
-	"ppp" [shape = diamond];
-	"libio-socket-ssl-perl" [shape = diamond];
-	"sgml-base-doc" [shape = diamond];
-	"debhelper" [shape = diamond];
-	"tasksel" [shape = diamond];
-	"debtags" [shape = diamond];
+	"apt" [shape=diamond];
+	"gpm" [shape=diamond];
+	"libcwidget-dev" [shape=diamond];
+	"xapian-tools" [shape=diamond];
+	"perl" [shape=diamond];
+	"dpkg" [shape=diamond];
+	"libipc-sharedcache-perl" [shape=diamond];
+	"ucf" [shape=diamond];
+	"iproute" [shape=diamond];
+	"dhcp3-client" [shape=diamond];
+	"ppp" [shape=diamond];
+	"libio-socket-ssl-perl" [shape=diamond];
+	"xml-core" [shape=diamond];
+	"tasksel" [shape=diamond];
+	"debtags" [shape=diamond];
 }
+// Excluded dependencies:
+// libc6 libgcc1 libstdc++6 zlib1g

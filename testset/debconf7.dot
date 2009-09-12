@@ -67,6 +67,7 @@ digraph "debconf" {
 	"debconf" -> "whiptail-utf8" [color=red,label="(<= 0.50.17-13)"];
 	"debconf" -> "debconf-2.0" [arrowhead=inv,color=green];
 	"debconf-2.0" [shape=octagon];
+	"debconf" [style="setlinewidth(2)"]
 	"libscalar-list-utils-perl" -> "perl-base" [dir=back,arrowtail=inv,color=green];
 	"libscalar-list-utils-perl" [shape=octagon];
 	"libxsloader-perl" -> "perl-base" [dir=back,arrowtail=inv,color=green];
@@ -83,13 +84,15 @@ digraph "debconf" {
 		shape = "record"
 		label = "<whiptail> \{whiptail\} | <dialog> \{dialog\} | <gnome-utils> \{gnome-utils\}"
 	]
-	"dpkg" [shape = diamond];
-	"perl" [shape = diamond];
-	"apt" [shape = diamond];
-	"debconf-doc" [shape = diamond];
-	"debconf-utils" [shape = diamond];
-	"libterm-readline-gnu-perl" [shape = diamond];
-	"libgnome2-perl" [shape = diamond];
-	"libqt-perl" [shape = diamond];
-	"libnet-ldap-perl" [shape = diamond];
+	"dpkg" [shape=diamond];
+	"perl" [shape=diamond];
+	"apt" [shape=diamond];
+	"debconf-doc" [shape=diamond];
+	"debconf-utils" [shape=diamond];
+	"libterm-readline-gnu-perl" [shape=diamond];
+	"libgnome2-perl" [shape=diamond];
+	"libqt-perl" [shape=diamond];
+	"libnet-ldap-perl" [shape=diamond];
 }
+// Excluded dependencies:
+// libc6 libgcc1 libstdc++6

@@ -22,6 +22,9 @@ digraph "debconf" {
 	"debconf" -> "debconf-tiny" [color=red];
 	"debconf" -> "debconf-2.0" [arrowhead=inv,color=green];
 	"debconf-2.0" [shape=octagon];
+	"debconf" [style="setlinewidth(2)"]
 	"debconf-tiny" [style=filled,fillcolor=oldlace];
-	"dpkg" [shape = diamond];
+	"dpkg" [shape=diamond];
 }
+// Excluded dependencies:
+// libc6

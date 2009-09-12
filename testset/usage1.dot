@@ -4,8 +4,6 @@ digraph "dpkg" {
 	"dpkg" -> "debhelper" [color=darkgoldenrod,style=bold,label="(>= 4.1.81)"];
 	"dpkg" -> "pkg-config" [color=darkgoldenrod,style=bold];
 	"pkg-config" -> "libglib2.0-0" [color=blue,label="(>= 2.12.9)"];
-	"libglib2.0-0" -> "libpcre3" [color=blue,label="(>= 7.4)"];
-	"libglib2.0-0" -> "libselinux1" [color=blue,label="(>= 2.0.59)"];
 	"dpkg" -> "po4a" [color=darkgoldenrod,style=bold,label="(>= 0.33.1)"];
 	"po4a" -> "perl" [color=blue,label="(>= 5.6.0-16)"];
 	"po4a" -> "gettext" [color=blue,label="(>= 0.16)"];
@@ -31,9 +29,13 @@ digraph "dpkg" {
 	"libtimedate-perl" -> "perl" [color=blue,label="(>= 5.6.0-16)"];
 	"dpkg" -> "libio-string-perl" [color=darkgoldenrod,style=bold];
 	"libio-string-perl" -> "perl" [color=blue,label="(>= 5.6.0-16)"];
-	"debhelper" [shape = diamond];
-	"perl" [shape = diamond];
-	"gettext" [shape = diamond];
-	"zlib1g-dev" [shape = diamond];
-	"debconf" [shape = diamond];
+	"dpkg" [style="setlinewidth(2)"]
+	"debhelper" [shape=diamond];
+	"libglib2.0-0" [shape=diamond];
+	"perl" [shape=diamond];
+	"gettext" [shape=diamond];
+	"zlib1g-dev" [shape=diamond];
+	"debconf" [shape=diamond];
 }
+// Excluded dependencies:
+// libc6 libgcc1 libstdc++6 libc-dev libc6-dev

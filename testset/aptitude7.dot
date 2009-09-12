@@ -198,19 +198,13 @@ digraph "aptitude" {
 	"libxml-libxml-common-perl" -> "perlapi-5.10.0" [color=blue];
 	"libxml-libxml-common-perl" -> "libxml2" [color=blue,label="(>= 2.6.27)"];
 	"libxml2" -> "xml-core";
-	"xml-core" -> "sgml-base" [color=blue,label="(>= 1.17)"];
-	"sgml-base" -> "perl" [color=blue];
-	"sgml-base" -> "sgml-base-doc" [style=dotted];
-	"sgml-base" -> "sgml-data" [color=red,label="(<= 0.02)"];
-	"sgml-base" -> "sgmltools-2" [color=red,label="(<= 2.0.2-4)"];
-	"xml-core" -> "sed" [color=blue,label="(>= 4.1.2-8)"];
-	"xml-core" -> "debhelper" [style=dotted,label="(>= 4.1.75)"];
 	"libxml2" -> "libxslt1.1" [color=red,label="(<= 1.1.12-8)"];
 	"alt3":"libxml-libxml-perl" -> "libxml-namespacesupport-perl" [color=blue,label="(>= 1.07)"];
 	"alt3":"libxml-libxml-perl" -> "libxml-sax-perl" [color=blue,label="(>= 0.11)"];
 	"alt3":"libxml-libxml-perl" -> "libxml2" [color=blue,label="(>= 2.6.27)"];
 	"aptitude" -> "tasksel" [style=dotted];
 	"aptitude" -> "debtags" [style=dotted];
+	"aptitude" [style="setlinewidth(2)"]
 	"libsigc++-1.9-0" [style=filled,fillcolor=oldlace];
 	"libsigc++-2.0-0" [style=filled,fillcolor=oldlace];
 	"libsigc++-2.0-0c2" [style=filled,fillcolor=oldlace];
@@ -260,8 +254,6 @@ digraph "aptitude" {
 	"mailtools" -> "libmailtools-perl" [dir=back,arrowtail=inv,color=green];
 	"mailtools" [shape=octagon];
 	"wink" [style=filled,fillcolor=oldlace];
-	"sgmltools-2" -> "sgmltools-lite" [dir=back,arrowtail=inv,color=green];
-	"sgmltools-2" [shape=octagon];
 	alt1 [
 		shape = "record"
 		label = "<aptitude-doc-en> aptitude-doc-en | <aptitude-doc> aptitude-doc"
@@ -274,19 +266,20 @@ digraph "aptitude" {
 		shape = "record"
 		label = "<libxml-libxml-perl> libxml-libxml-perl | <libxml-sax-expat-perl> [libxml-sax-expat-perl]"
 	]
-	"apt" [shape = diamond];
-	"gpm" [shape = diamond];
-	"libcwidget-dev" [shape = diamond];
-	"xapian-tools" [shape = diamond];
-	"perl" [shape = diamond];
-	"dpkg" [shape = diamond];
-	"libipc-sharedcache-perl" [shape = diamond];
-	"ucf" [shape = diamond];
-	"iproute" [shape = diamond];
-	"ppp" [shape = diamond];
-	"libio-socket-ssl-perl" [shape = diamond];
-	"sgml-base-doc" [shape = diamond];
-	"debhelper" [shape = diamond];
-	"tasksel" [shape = diamond];
-	"debtags" [shape = diamond];
+	"apt" [shape=diamond];
+	"gpm" [shape=diamond];
+	"libcwidget-dev" [shape=diamond];
+	"xapian-tools" [shape=diamond];
+	"perl" [shape=diamond];
+	"dpkg" [shape=diamond];
+	"libipc-sharedcache-perl" [shape=diamond];
+	"ucf" [shape=diamond];
+	"iproute" [shape=diamond];
+	"ppp" [shape=diamond];
+	"libio-socket-ssl-perl" [shape=diamond];
+	"xml-core" [shape=diamond];
+	"tasksel" [shape=diamond];
+	"debtags" [shape=diamond];
 }
+// Excluded dependencies:
+// libc6 libgcc1 libstdc++6 zlib1g

@@ -17,9 +17,12 @@ digraph "aptitude" {
 	"aptitude" -> "libncursesw5" [color=blue];
 	"aptitude" -> "libsigc++-2.0-0c2a" [color=blue];
 	"aptitude" -> "libxapian15" [color=blue];
+	"aptitude" [style="setlinewidth(2)"]
 	"libsigc++-1.9-0" [style=filled,fillcolor=oldlace];
 	"libsigc++-2.0-0" [style=filled,fillcolor=oldlace];
 	"libsigc++-2.0-0c2" [style=filled,fillcolor=oldlace];
 	"libxapian2" [style=filled,fillcolor=oldlace];
-	"apt" [shape = diamond];
+	"apt" [shape=diamond];
 }
+// Excluded dependencies:
+// libc6 libgcc1 libstdc++6 zlib1g
