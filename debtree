@@ -1151,7 +1151,7 @@ fi
 
 if [ "$package_skipped" ]; then
 	info 1 "The following dependencies have been excluded from the graph (skipped):"
-	info 1 $(echo $package_skipped)
+	info 1 "$(echo $package_skipped)"
 	# Also list excluded packages as comments in the output
 	echo "// Excluded dependencies:"
 	echo "// $(echo $package_skipped)"
