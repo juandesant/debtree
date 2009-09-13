@@ -58,8 +58,9 @@ usage4 apt -I --rdeps-depth=3"
 
 if [ -z "$web" ]; then
 testset="$testset
-test1 tcpd --no-conflicts -I --rdeps-depth=2 --max-rdeps=3"
+test1 tcpd --no-conflicts -I --rdeps-depth=2 --max-rdeps=3
 test2 libcairo2 --no-conflicts -I --rdeps-depth=20
+test3 debian-installer -b --arch=armel --no-recommends --no-conflicts"
 fi
 
 echo "$testset" | while read outfile package opts; do
