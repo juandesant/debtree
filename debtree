@@ -934,9 +934,10 @@ find_rdeps() {
 			if ! check_list done $rdep; then
 				mark_rdep $rdep
 			fi
+			[ $level -gt -$show_rdeps ] || continue;
 			if [ $level -eq -1 ]; then
 				find_rdeps $(($level -1)) $rdep $package
-			elif [ $level -gt -$show_rdeps ]; then
+			else
 				find_rdeps $(($level -1)) $rdep
 			fi
 		fi
