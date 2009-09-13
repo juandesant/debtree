@@ -18,8 +18,8 @@ digraph "aptitude" {
 	"aptitude" -> "libsigc++-2.0-0c2a" [color=blue,label="(>= 2.0.2)"];
 	"aptitude" -> "libxapian15" [color=blue];
 	"aptitude" -> "alt1";
-	"alt1":"aptitude-doc" -> "Pr-aptitude-doc" [label="-5-",dir=back,arrowtail=inv,color=green];
-	"Pr-aptitude-doc" [label="...",style=rounded];
+	"alt1":"aptitude-doc" -> "Pr_aptitude-doc" [label="-5-",dir=back,arrowtail=inv,color=green];
+	"Pr_aptitude-doc" [label="...",style=rounded];
 	"aptitude" -> "libparse-debianchangelog-perl";
 	"libparse-debianchangelog-perl" -> "libclass-accessor-perl" [color=blue];
 	"libclass-accessor-perl" -> "perl" [color=blue,label="(>= 5.6.1-7)"];
@@ -134,9 +134,9 @@ digraph "aptitude" {
 	"libsigc++-2.0-0" [style=filled,fillcolor=oldlace];
 	"libsigc++-2.0-0c2" [style=filled,fillcolor=oldlace];
 	"libxapian2" [style=filled,fillcolor=oldlace];
+	"ncurses" [style=filled,fillcolor=oldlace];
 	"timedate" -> "libtimedate-perl" [dir=back,arrowtail=inv,color=green];
 	"timedate" [shape=octagon];
-	"ncurses" [style=filled,fillcolor=oldlace];
 	"tput" -> "ncurses-bin" [dir=back,arrowtail=inv,color=green];
 	"tput" [shape=octagon];
 	alt1 [
@@ -148,8 +148,8 @@ digraph "aptitude" {
 		label = "<libxml-libxml-perl> libxml-libxml-perl | <libxml-sax-expat-perl> [libxml-sax-expat-perl]"
 	]
 	"apt" [shape=diamond];
-	"perl" [shape=diamond];
 	"dpkg" [shape=diamond];
+	"perl" [shape=diamond];
 	"ucf" [shape=diamond];
 	"xml-core" [shape=diamond];
 }

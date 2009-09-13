@@ -36,9 +36,9 @@ digraph "apt" {
 	"apt-utils" [style=filled,fillcolor=azure];
 	"debconf" -> "apt-utils";
 	"debconf" [style=filled,fillcolor=azure];
-	"Rdep-debconf" -> "debconf"  [label="-9-",color=purple,style=bold];
-	"Rdep-debconf" -> "debconf"  [label="-58-",color=blue];
-	"Rdep-debconf" [label="...",style="rounded,filled",fillcolor=azure];
+	"RD_debconf" -> "debconf"  [label="-9-",color=purple,style=bold];
+	"RD_debconf" -> "debconf"  [label="-58-",color=blue];
+	"RD_debconf" [label="...",style="rounded,filled",fillcolor=azure];
 	"aptitude" [style=filled,fillcolor=azure];
 	"tasksel" -> "aptitude" [color=blue];
 	"tasksel" [style=filled,fillcolor=azure];

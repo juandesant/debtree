@@ -28,6 +28,7 @@ digraph "debconf" {
 	"apt-utils" -> "libdb4.6" [color=blue];
 	"debconf" -> "debconf-tiny" [color=red];
 	"debconf" -> "debconf-2.0" [arrowhead=inv,color=green];
+	"debconf-2.0" -> virt1 [dir=back,arrowtail=inv,color=green];
 	"debconf-2.0" [shape=octagon];
 	"debconf" [style="setlinewidth(2)"]
 	"debconf-tiny" [style=filled,fillcolor=oldlace];
@@ -35,8 +36,13 @@ digraph "debconf" {
 		shape = "record"
 		label = "<debconf-i18n> debconf-i18n | <debconf-english> debconf-english"
 	]
-	"dpkg" [shape=diamond];
+	virt1 [
+		shape = "record"
+		style = "rounded"
+		label = "<cdebconf> \{cdebconf\} | <debconf> [debconf]"
+	]
 	"apt" [shape=diamond];
+	"dpkg" [shape=diamond];
 }
 // Excluded dependencies:
 // libc6 libgcc1 libstdc++6

@@ -37,6 +37,7 @@ digraph "debconf" {
 	"debconf" -> "perl" [style=dotted];
 	"debconf" -> "debconf-tiny" [color=red];
 	"debconf" -> "debconf-2.0" [arrowhead=inv,color=green];
+	"debconf-2.0" -> virt1 [dir=back,arrowtail=inv,color=green];
 	"debconf-2.0" [shape=octagon];
 	"debconf" [style="setlinewidth(2)"]
 	"debconf-tiny" [style=filled,fillcolor=oldlace];
@@ -48,15 +49,20 @@ digraph "debconf" {
 		shape = "record"
 		label = "<whiptail> \{whiptail\} | <dialog> \{dialog\} | <gnome-utils> \{gnome-utils\}"
 	]
-	"dpkg" [shape=diamond];
-	"perl" [shape=diamond];
+	virt1 [
+		shape = "record"
+		style = "rounded"
+		label = "<cdebconf> \{cdebconf\} | <debconf> [debconf]"
+	]
 	"apt" [shape=diamond];
 	"debconf-doc" [shape=diamond];
 	"debconf-utils" [shape=diamond];
-	"libterm-readline-gnu-perl" [shape=diamond];
+	"dpkg" [shape=diamond];
 	"libgnome2-perl" [shape=diamond];
-	"libqt-perl" [shape=diamond];
 	"libnet-ldap-perl" [shape=diamond];
+	"libqt-perl" [shape=diamond];
+	"libterm-readline-gnu-perl" [shape=diamond];
+	"perl" [shape=diamond];
 }
 // Excluded dependencies:
 // libc6 libgcc1 libstdc++6

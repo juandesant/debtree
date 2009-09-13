@@ -79,7 +79,7 @@ digraph "libcairo2" {
 	"gij-4.3" -> "libgcj9-0-awt";
 	"libgcj9-0" -> "libgcj9-0-awt";
 	"java-gcj-compat" [style=filled,fillcolor=azure];
-	"Rdep-java-gcj-compat" -> "java-gcj-compat"  [label="-8-",color=blue];
+	"RD_java-gcj-compat" -> "java-gcj-compat"  [label="-8-",color=blue];
 	"java-gcj-compat-headless" -> "java-gcj-compat";
 	"openoffice.org-writer" -> "java-gcj-compat";
 	"java-gcj-compat-headless" [style=filled,fillcolor=azure];
@@ -89,7 +89,7 @@ digraph "libcairo2" {
 	"openoffice.org-help-en-us" -> "openoffice.org-writer" [color=blue];
 	"openoffice.org-hyphenation-en-us" [style=filled,fillcolor=azure];
 	"openoffice.org-help-en-us" [style=filled,fillcolor=azure];
-	"Rdep-java-gcj-compat" [label="...",style="rounded,filled",fillcolor=azure];
+	"RD_java-gcj-compat" [label="...",style="rounded,filled",fillcolor=azure];
 	"gij" [style=filled,fillcolor=azure];
 	"libhsqldb-java" -> "gij" [color=blue];
 	"libjaxp1.3-java" -> "gij" [color=blue];
@@ -173,14 +173,14 @@ digraph "libcairo2" {
 	"libxine1-plugins" [style=filled,fillcolor=azure];
 	"libxine1" -> "libxine1-plugins" [color=blue];
 	"libgtk2.0-0" [style=filled,fillcolor=azure];
-	"Rdep-libgtk2.0-0" -> "libgtk2.0-0"  [label="-29-",color=blue];
+	"RD_libgtk2.0-0" -> "libgtk2.0-0"  [label="-29-",color=blue];
 	"libgtk2.0-common" -> "libgtk2.0-0";
 	"libgtk2.0-common" [style=filled,fillcolor=azure];
 	"libgtk2.0-0" -> "libgtk2.0-common" [color=blue];
 	"libgtk2.0-bin" -> "libgtk2.0-common" [color=blue];
 	"libgtk2.0-bin" [style=filled,fillcolor=azure];
 	"libgtk2.0-0" -> "libgtk2.0-bin";
-	"Rdep-libgtk2.0-0" [label="...",style="rounded,filled",fillcolor=azure];
+	"RD_libgtk2.0-0" [label="...",style="rounded,filled",fillcolor=azure];
 	"libgutenprintui2-1" [style=filled,fillcolor=azure];
 	"gimp-gutenprint" -> "libgutenprintui2-1" [color=blue];
 	"libnotify1" [style=filled,fillcolor=azure];
@@ -191,11 +191,11 @@ digraph "libcairo2" {
 	"mozilla-plugin-vlc" [style=filled,fillcolor=azure];
 	"vlc-plugin-alsa" [style=filled,fillcolor=azure];
 	"libpango1.0-0" [style=filled,fillcolor=azure];
-	"Rdep-libpango1.0-0" -> "libpango1.0-0"  [label="-23-",color=blue];
+	"RD_libpango1.0-0" -> "libpango1.0-0"  [label="-23-",color=blue];
 	"libpango1.0-common" -> "libpango1.0-0";
 	"libpango1.0-common" [style=filled,fillcolor=azure];
 	"libpango1.0-0" -> "libpango1.0-common" [color=blue];
-	"Rdep-libpango1.0-0" [label="...",style="rounded,filled",fillcolor=azure];
+	"RD_libpango1.0-0" [label="...",style="rounded,filled",fillcolor=azure];
 	"libpoppler-glib3" [style=filled,fillcolor=azure];
 	"gimp" -> "libpoppler-glib3" [color=blue];
 	"librsvg2-2" [style=filled,fillcolor=azure];
@@ -214,14 +214,14 @@ digraph "libcairo2" {
 	"iceweasel" -> "xulrunner-1.9" [color=blue];
 	"iceweasel" [style=filled,fillcolor=azure];
 	"openoffice.org-core" [style=filled,fillcolor=azure];
-	"Rdep-openoffice.org-core" -> "openoffice.org-core"  [label="-7-",color=blue];
+	"RD_openoffice.org-core" -> "openoffice.org-core"  [label="-7-",color=blue];
 	"openoffice.org-help-en-us" -> "openoffice.org-core";
 	"openoffice.org-l10n-nl" -> "openoffice.org-core";
 	"openoffice.org-l10n-nl" [style=filled,fillcolor=azure];
-	"Rdep-openoffice.org-core" [label="...",style="rounded,filled",fillcolor=azure];
+	"RD_openoffice.org-core" [label="...",style="rounded,filled",fillcolor=azure];
 	"libcairo2" [style="setlinewidth(2),filled",fillcolor=honeydew];
 	"libfontconfig1" [shape=diamond];
 	"libfontconfig1" [style=filled,fillcolor=honeydew];
 }
 // Excluded dependencies:
-// libc6 zlib1g libx11-6
+// libc6 libx11-6 zlib1g

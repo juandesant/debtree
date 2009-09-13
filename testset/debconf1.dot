@@ -21,9 +21,15 @@ digraph "debconf" {
 	"debconf-i18n" -> "debconf-english" [color=red];
 	"debconf" -> "debconf-tiny" [color=red];
 	"debconf" -> "debconf-2.0" [arrowhead=inv,color=green];
+	"debconf-2.0" -> virt1 [dir=back,arrowtail=inv,color=green];
 	"debconf-2.0" [shape=octagon];
 	"debconf" [style="setlinewidth(2)"]
 	"debconf-tiny" [style=filled,fillcolor=oldlace];
+	virt1 [
+		shape = "record"
+		style = "rounded"
+		label = "<cdebconf> \{cdebconf\} | <debconf> [debconf]"
+	]
 	"dpkg" [shape=diamond];
 }
 // Excluded dependencies:

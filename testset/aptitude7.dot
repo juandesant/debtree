@@ -24,8 +24,8 @@ digraph "aptitude" {
 	"aptitude" -> "libxapian15" [color=blue];
 	"aptitude" -> "alt1";
 	"alt1":"aptitude-doc-en" -> "aptitude" [style=dotted];
-	"alt1":"aptitude-doc" -> "Pr-aptitude-doc" [label="-5-",dir=back,arrowtail=inv,color=green];
-	"Pr-aptitude-doc" [label="...",style=rounded];
+	"alt1":"aptitude-doc" -> "Pr_aptitude-doc" [label="-5-",dir=back,arrowtail=inv,color=green];
+	"Pr_aptitude-doc" [label="...",style=rounded];
 	"aptitude" -> "libparse-debianchangelog-perl";
 	"libparse-debianchangelog-perl" -> "libclass-accessor-perl" [color=blue];
 	"libclass-accessor-perl" -> "perl" [color=blue,label="(>= 5.6.1-7)"];
@@ -205,16 +205,7 @@ digraph "aptitude" {
 	"aptitude" -> "tasksel" [style=dotted];
 	"aptitude" -> "debtags" [style=dotted];
 	"aptitude" [style="setlinewidth(2)"]
-	"libsigc++-1.9-0" [style=filled,fillcolor=oldlace];
-	"libsigc++-2.0-0" [style=filled,fillcolor=oldlace];
-	"libsigc++-2.0-0c2" [style=filled,fillcolor=oldlace];
-	"libxapian2" [style=filled,fillcolor=oldlace];
-	"libscalar-list-utils-perl" -> "perl-base" [dir=back,arrowtail=inv,color=green];
-	"libscalar-list-utils-perl" [shape=octagon];
-	"libxsloader-perl" -> "perl-base" [dir=back,arrowtail=inv,color=green];
-	"libxsloader-perl" [shape=octagon];
-	"timedate" -> "libtimedate-perl" [dir=back,arrowtail=inv,color=green];
-	"timedate" [shape=octagon];
+	"ja-trans" [style=filled,fillcolor=oldlace];
 	"libansicolor-perl" -> "perl-modules" [dir=back,arrowtail=inv,color=green];
 	"libansicolor-perl" [shape=octagon];
 	"libarchive-tar-perl" -> "perl-modules" [dir=back,arrowtail=inv,color=green];
@@ -243,16 +234,25 @@ digraph "aptitude" {
 	"libparams-check-perl" [shape=octagon];
 	"libpod-parser-perl" -> "perl-modules" [dir=back,arrowtail=inv,color=green];
 	"libpod-parser-perl" [shape=octagon];
+	"libscalar-list-utils-perl" -> "perl-base" [dir=back,arrowtail=inv,color=green];
+	"libscalar-list-utils-perl" [shape=octagon];
+	"libsigc++-1.9-0" [style=filled,fillcolor=oldlace];
+	"libsigc++-2.0-0" [style=filled,fillcolor=oldlace];
+	"libsigc++-2.0-0c2" [style=filled,fillcolor=oldlace];
 	"libversion-perl" -> "perl-modules" [dir=back,arrowtail=inv,color=green];
 	"libversion-perl" [shape=octagon];
-	"podlators-perl" -> "perl-modules" [dir=back,arrowtail=inv,color=green];
-	"podlators-perl" [shape=octagon];
-	"ncurses" [style=filled,fillcolor=oldlace];
-	"tput" -> "ncurses-bin" [dir=back,arrowtail=inv,color=green];
-	"tput" [shape=octagon];
-	"ja-trans" [style=filled,fillcolor=oldlace];
+	"libxapian2" [style=filled,fillcolor=oldlace];
+	"libxsloader-perl" -> "perl-base" [dir=back,arrowtail=inv,color=green];
+	"libxsloader-perl" [shape=octagon];
 	"mailtools" -> "libmailtools-perl" [dir=back,arrowtail=inv,color=green];
 	"mailtools" [shape=octagon];
+	"ncurses" [style=filled,fillcolor=oldlace];
+	"podlators-perl" -> "perl-modules" [dir=back,arrowtail=inv,color=green];
+	"podlators-perl" [shape=octagon];
+	"timedate" -> "libtimedate-perl" [dir=back,arrowtail=inv,color=green];
+	"timedate" [shape=octagon];
+	"tput" -> "ncurses-bin" [dir=back,arrowtail=inv,color=green];
+	"tput" [shape=octagon];
 	"wink" [style=filled,fillcolor=oldlace];
 	alt1 [
 		shape = "record"
@@ -267,19 +267,19 @@ digraph "aptitude" {
 		label = "<libxml-libxml-perl> libxml-libxml-perl | <libxml-sax-expat-perl> [libxml-sax-expat-perl]"
 	]
 	"apt" [shape=diamond];
-	"gpm" [shape=diamond];
-	"libcwidget-dev" [shape=diamond];
-	"xapian-tools" [shape=diamond];
-	"perl" [shape=diamond];
-	"dpkg" [shape=diamond];
-	"libipc-sharedcache-perl" [shape=diamond];
-	"ucf" [shape=diamond];
-	"iproute" [shape=diamond];
-	"ppp" [shape=diamond];
-	"libio-socket-ssl-perl" [shape=diamond];
-	"xml-core" [shape=diamond];
-	"tasksel" [shape=diamond];
 	"debtags" [shape=diamond];
+	"dpkg" [shape=diamond];
+	"gpm" [shape=diamond];
+	"iproute" [shape=diamond];
+	"libcwidget-dev" [shape=diamond];
+	"libio-socket-ssl-perl" [shape=diamond];
+	"libipc-sharedcache-perl" [shape=diamond];
+	"perl" [shape=diamond];
+	"ppp" [shape=diamond];
+	"tasksel" [shape=diamond];
+	"ucf" [shape=diamond];
+	"xapian-tools" [shape=diamond];
+	"xml-core" [shape=diamond];
 }
 // Excluded dependencies:
 // libc6 libgcc1 libstdc++6 zlib1g

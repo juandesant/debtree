@@ -48,17 +48,16 @@ digraph "pidentd" {
 	"alt2":"openbsd-inetd" -> "netkit-inetd" [color=red];
 	"pidentd" -> "ident-server" [color=red];
 	"pidentd" -> "ident-server" [arrowhead=inv,color=green];
+	"ident-server" -> "Pr_ident-server" [label="-7-",dir=back,arrowtail=inv,color=green];
+	"Pr_ident-server" [label="...",style=rounded];
 	"ident-server" [shape=octagon];
 	"pidentd" [style="setlinewidth(2)"]
 	"libssl" [style=filled,fillcolor=oldlace];
 	"ncurses" [style=filled,fillcolor=oldlace];
-	"tput" -> "ncurses-bin" [dir=back,arrowtail=inv,color=green];
-	"tput" [shape=octagon];
 	"netkit-inetd" -> virt1 [dir=back,arrowtail=inv,color=green];
 	"netkit-inetd" [shape=octagon];
-	"ident-server" -> "Pr-ident-server" [label="-7-",dir=back,arrowtail=inv,color=green];
-	"Pr-ident-server" [label="...",style=rounded];
-	"ident-server" [shape=octagon];
+	"tput" -> "ncurses-bin" [dir=back,arrowtail=inv,color=green];
+	"tput" [shape=octagon];
 	alt1 [
 		shape = "record"
 		style = "filled"

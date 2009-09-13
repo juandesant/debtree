@@ -146,26 +146,26 @@ digraph "aptitude" {
 	"libsigc++-2.0-0" [style=filled,fillcolor=oldlace];
 	"libsigc++-2.0-0c2" [style=filled,fillcolor=oldlace];
 	"libxapian2" [style=filled,fillcolor=oldlace];
+	"ncurses" [style=filled,fillcolor=oldlace];
 	"timedate" -> "libtimedate-perl" [dir=back,arrowtail=inv,color=green];
 	"timedate" [shape=octagon];
-	"ncurses" [style=filled,fillcolor=oldlace];
 	"tput" -> "ncurses-bin" [dir=back,arrowtail=inv,color=green];
 	"tput" [shape=octagon];
 	"apt" [shape=diamond];
-	"gpm" [shape=diamond];
-	"libcwidget-dev" [shape=diamond];
-	"xapian-tools" [shape=diamond];
-	"perl" [shape=diamond];
-	"dpkg" [shape=diamond];
-	"libipc-sharedcache-perl" [shape=diamond];
-	"ucf" [shape=diamond];
-	"iproute" [shape=diamond];
-	"dhcp3-client" [shape=diamond];
-	"ppp" [shape=diamond];
-	"libio-socket-ssl-perl" [shape=diamond];
-	"xml-core" [shape=diamond];
-	"tasksel" [shape=diamond];
 	"debtags" [shape=diamond];
+	"dhcp3-client" [shape=diamond];
+	"dpkg" [shape=diamond];
+	"gpm" [shape=diamond];
+	"iproute" [shape=diamond];
+	"libcwidget-dev" [shape=diamond];
+	"libio-socket-ssl-perl" [shape=diamond];
+	"libipc-sharedcache-perl" [shape=diamond];
+	"perl" [shape=diamond];
+	"ppp" [shape=diamond];
+	"tasksel" [shape=diamond];
+	"ucf" [shape=diamond];
+	"xapian-tools" [shape=diamond];
+	"xml-core" [shape=diamond];
 }
 // Excluded dependencies:
 // libc6 libgcc1 libstdc++6 zlib1g

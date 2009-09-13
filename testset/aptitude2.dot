@@ -133,14 +133,14 @@ digraph "aptitude" {
 	"libsigc++-2.0-0" [style=filled,fillcolor=oldlace];
 	"libsigc++-2.0-0c2" [style=filled,fillcolor=oldlace];
 	"libxapian2" [style=filled,fillcolor=oldlace];
+	"ncurses" [style=filled,fillcolor=oldlace];
 	"timedate" -> "libtimedate-perl" [dir=back,arrowtail=inv,color=green];
 	"timedate" [shape=octagon];
-	"ncurses" [style=filled,fillcolor=oldlace];
 	"tput" -> "ncurses-bin" [dir=back,arrowtail=inv,color=green];
 	"tput" [shape=octagon];
 	"apt" [shape=diamond];
-	"perl" [shape=diamond];
 	"dpkg" [shape=diamond];
+	"perl" [shape=diamond];
 	"ucf" [shape=diamond];
 	"xml-core" [shape=diamond];
 }

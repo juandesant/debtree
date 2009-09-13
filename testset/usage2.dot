@@ -56,11 +56,12 @@ digraph "clamav" {
 	"clamav" -> "clamav-base";
 	"clamav" -> "clamav-docs" [style=dotted];
 	"clamav" [style="setlinewidth(2)"]
+	"clamav-docs" [style=filled,fillcolor=oldlace];
+	"libclamav3" [style=filled,fillcolor=oldlace];
 	"libclamunrar6" [style=filled,fillcolor=oldlace];
 	"ncurses" [style=filled,fillcolor=oldlace];
 	"tput" -> "ncurses-bin" [dir=back,arrowtail=inv,color=green];
 	"tput" [shape=octagon];
-	"libclamav3" [style=filled,fillcolor=oldlace];
 	alt1 [
 		shape = "record"
 		label = "<clamav-freshclam> clamav-freshclam | <clamav-data> clamav-data"
@@ -71,24 +72,23 @@ digraph "clamav" {
 		fillcolor = "honeydew"
 		label = "<debconf> \{debconf\} | <other> ..."
 	]
-	"libclamunrar6" [shape=diamond];
+	"clamav-docs" [shape=diamond];
 	"dpkg" [shape=diamond];
 	"dpkg" [style=filled,fillcolor=honeydew];
-	"perl" [shape=diamond];
-	"perl" [style=filled,fillcolor=honeydew];
-	"passwd" [shape=diamond];
-	"passwd" [style=filled,fillcolor=honeydew];
+	"gpm" [shape=diamond];
+	"libclamunrar6" [shape=diamond];
 	"liblocale-gettext-perl" [shape=diamond];
 	"liblocale-gettext-perl" [style=filled,fillcolor=honeydew];
+	"logrotate" [shape=diamond];
+	"logrotate" [style=filled,fillcolor=honeydew];
+	"passwd" [shape=diamond];
+	"passwd" [style=filled,fillcolor=honeydew];
+	"perl" [shape=diamond];
+	"perl" [style=filled,fillcolor=honeydew];
 	"perl-modules" [shape=diamond];
 	"perl-modules" [style=filled,fillcolor=honeydew];
 	"ucf" [shape=diamond];
 	"ucf" [style=filled,fillcolor=honeydew];
-	"logrotate" [shape=diamond];
-	"logrotate" [style=filled,fillcolor=honeydew];
-	"gpm" [shape=diamond];
-	"clamav-docs" [shape=diamond];
-	"clamav-docs" [shape=diamond];
 }
 // Excluded dependencies:
 // libc6 zlib1g
