@@ -74,7 +74,7 @@ with_versions=1
 show_installed=""
 show_rdeps=""
 max_rdeps=5
-max_depth=""
+max_depth=999999
 no_skip=""
 show_all=""
 do_rotate=""
@@ -752,7 +752,7 @@ process_deps() {
 						package_leaf="$package_leaf$NL$dep_package"
 					fi ;;
 				    *)
-					if [ -z "$max_depth" ] || [ $level -lt $max_depth ]; then
+					if [ $level -lt $max_depth ]; then
 						process_package $(($level + 1)) $dep_package \
 							"$dep_tree" "$OR_name" ""
 					else
