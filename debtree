@@ -805,8 +805,8 @@ sub process_virtual {
 			# Print the arrow now; the record itself is printed later
 			printf("\t$p_package -> $OR_name [dir=back,arrowtail=inv,color=green];\n");
 		} else {
-			printf("\t$p_package -> \"Pr-$package\" [label=\"-$prov_cnt-\",dir=back,arrowtail=inv,color=green];\n");
-			printf("\t\"Pr-$package\" [label=\"...\",style=rounded];\n");
+			printf("\t$p_package -> \"Pr_$package\" [label=\"-$prov_cnt-\",dir=back,arrowtail=inv,color=green];\n");
+			printf("\t\"Pr_$package\" [label=\"...\",style=rounded];\n");
 		}
 	}
 
@@ -854,7 +854,7 @@ sub find_rdeps {
 			$opts = "color=blue" if ($type eq "D");
 			$opts = "" if ($type eq "R");
 			$opts = " [label=\"-$cnt-\",$opts]"; # FIXME if type=R ?
-			printf("\t\"Rdep-$package\" -> \"$package\" $opts;\n");
+			printf("\t\"RD_$package\" -> \"$package\" $opts;\n");
 			$has_max = 1;
 			next;
 		}
@@ -891,7 +891,7 @@ sub find_rdeps {
 	}
 
 	if ($has_max) {
-		printf("\t\"Rdep-$package\" [label=\"...\",style=\"rounded,filled\",fillcolor=$rdep_color];\n");
+		printf("\t\"RD_$package\" [label=\"...\",style=\"rounded,filled\",fillcolor=$rdep_color];\n");
 	}
 }
 
