@@ -17,6 +17,16 @@
 # In second case it will list the dependency path(s) from the first
 # to the second package.
 
+sub usage {
+  warn join(" ", @_)."\n" if @_;
+  warn <<EOF;
+Usage: $0 [options] package
+
+For details, see man page.
+EOF
+  exit(1);
+}
+
 use strict;
 use Cwd;
 use Getopt::Long;
@@ -27,7 +37,10 @@ my @ARCHES = qw/alpha amd64 arm armel hppa i386 ia64 mips mipsel powerpc s390 sp
 push(@ARCHES, qw/m68k ppc64 sh all/);
 
 my $ptype;
-my $verbose = 1;
+my $verbose = 0;
+my $quiet = 0;
+my $show_installed = 0;
+my $show_rdeps = 0;
 my $build_dep = 0;
 my $with_alternatives = 1;
 my $with_suggests = 0;
@@ -37,15 +50,16 @@ my $with_vconflicts = 0;
 my $with_provides = 1;
 my $max_providers = 3;
 my $with_versions = 1;
-my $show_installed = 0;
-my $show_rdeps = 0;
-my $max_rdeps=5;
 my $max_depth = 999999;
+my $rdeps_depth = 0;
+my $max_rdeps=5;
 my $no_skip = 0;
 my $show_all = 0;
 my $do_rotate = 0;
 my $do_condense = 0;
+
 my $ARCH=`dpkg --print-architecture`;
+chomp $ARCH;
 
 my (%package_skip, %package_skipped, %package_end, %package_ended);
 my (%package_done, %package_leaf, %package_unknown, %package_OR_seen);
@@ -55,81 +69,44 @@ my $OR_dep_cnt = 0;
 my $OR_virt_cnt = 0;
 my $pdep_set_cnt = 0;
 
-#while true; do
-#	case "$1" in
-#	    "")
-#		break ;;
-#	    --build-dep|-b)
-#		build_dep=1 ;;
-#	    --no-alternatives)
-#		with_alternatives="" ;;
-#	    --no-recommends)
-#		with_recommends="" ;;
-#	    --no-conflicts)
-#		with_conflicts="" ;;
-#	    --no-provides)
-#		with_provides="" ;;
-#	    --max-providers=*)
-#		max_providers=${1#*=}
-#		if ! echo $max_providers | grep -q "^[1-9][0-9]*$"; then
-#			error("invalid value for option 'max-providers'");
-#		fi ;;
-#	    --with-suggests|-S)
-#		with_suggests=1 ;;
-#	    --versioned-conflicts|-VC)
-#		with_vconflicts=1 ;;
-#	    --no-versions)
-#		with_versions="" ;;
-#	    --show-installed|-I)
-#		show_installed=1 ;;
-#	    --show-rdeps|-R)
-#		show_rdeps=${show_rdeps:-1} ;;
-#	    --rdeps-depth=*)
-#		show_rdeps=${1#*=} ;;
-#	    --max-rdeps=*)
-#		max_rdeps=${1#*=} ;;
-#	    --max-depth=*)
-#		max_depth=${1#*=}
-#		if ! echo $max_depth | grep -Eq "^[0-9]+$"; then
-#			error("invalid value for option 'max-depth'");
-#		fi ;;
-#	    --no-skip)
-#		no_skip=1 ;;
-#	    --show-all)
-#		show_all=1 ;;
-#	    --rotate|-r)
-#		do_rotate=1 ;;
-#	    --condense)
-#		do_condense=1 ;;
-#	    --arch=*)
-#		ARCH=${1#*=}
-#		if ! echo "$ARCHES" | grep -Eq "(^|,)$ARCH(,|$)"; then
-#			error("invalid value for option 'arch'");
-#		fi
-#		if [ "$ARCH" = all ]; then
-#			ARCH=""
-#		fi ;;
-#	    --quiet|-q)
-#		verbose=0 ;;
-#	    --verbose|-v)
-#		[ $verbose -eq 0 ] || verbose=$(($verbose + 1)) ;;
-#	    -*)
-#		error("unrecognized argument '$1'");
-#		;;
-#	    *)
-#		if [ -z "$requested_package" ]; then
-#			requested_package=$1
-#		else
-#			#error "invalid number of arguments"
-#			echo "Listing of dependency paths is no longer supported." >&2
-#			echo "Use 'aptitude why' instead." >&2
-#			exit 1
-#		fi
-#		;;
-#	esac
-#	shift
-#}
-my $requested_package = "dpkg";
+$Getopt::Long::ignorecase = 0;
+GetOptions(
+	'show-installed|I'		=> \$show_installed,
+	'show-rdeps|R'			=> \$show_rdeps,
+	'build-dep|b'			=> \$build_dep,
+	'alternatives!'			=> \$with_alternatives,
+	'recommends!'			=> \$with_recommends,
+	'conflicts!'			=> \$with_conflicts,
+	'provides!'			=> \$with_provides,
+	'max-providers=i'		=> \$max_providers,
+	'with-suggests|S'		=> \$with_suggests,
+	'versioned-conflicts|VC'	=> \$with_vconflicts,
+	'versions!'			=> \$with_versions,
+	'max-depth=i'			=> \$max_depth,
+	'rdeps-depth=i'			=> \$rdeps_depth,
+	'max-rdeps=i'			=> \$max_rdeps,
+	'skip!'				=> \$no_skip,
+	'show-all'			=> \$show_all,
+	'rotate|r'			=> \$do_rotate,
+	'condense'			=> \$do_condense,
+	'arch=s'			=> \$ARCH,
+	'quiet|q'			=> \$quiet,
+	'verbose|v+'			=> \$verbose,
+) or usage;
+#usage if $help;
+
+# Package for which to generate the graph
+my $requested_package = shift or error("invalid number of arguments");
+
+if (@ARGV) {
+	#error("invalid number of arguments");
+	print(STDERR "Listing of dependency paths is no longer supported.\n");
+	print(STDERR "Use 'aptitude why' instead.\n");
+	exit 1;
+}
+
+# Raise verbosity level by one unless the quiet option was passed
+$verbose++ unless $quiet;
 
 # Don't allow Suggests without Recommends
 $with_suggests = 0 unless $with_recommends;
@@ -147,10 +124,17 @@ if ($build_dep) {
 } else {
 	$ptype = "B";
 }
+error("invalid value for option 'arch'") if ($ARCH && ! grep (/^$ARCH$/, @ARCHES));
+$ARCH = "" if ($ARCH eq "all");
 
-if (! $requested_package) {
-	error("invalid number of arguments");
-}
+# These options are overlapping
+$rdeps_depth = 1 if ($show_rdeps && $rdeps_depth == 0);
+$show_rdeps = 1 if ($rdeps_depth);
+
+error("invalid value for option 'max-providers'") if ($max_providers < 1);
+error("invalid value for option 'max-depth'") if ($max_depth < 0);
+error("invalid value for option 'rdeps-depth'") if ($show_rdeps && $rdeps_depth < 1);
+error("invalid value for option 'max-rdeps'") if ($max_rdeps < 1);
 
 # ToDo: use configurable colors for everything?
 my $rdep_color;
@@ -881,7 +865,7 @@ sub find_rdeps {
 			if (! exists $package_done{$rdep}) {
 				mark_rdep($rdep);
 			}
-			next unless ($level > -$show_rdeps);
+			next unless ($level > -$rdeps_depth);
 			if ($level == -1) {
 				find_rdeps($level - 1, $rdep, $package);
 			} else {
