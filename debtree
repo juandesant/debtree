@@ -217,49 +217,44 @@ sub import_list {
 
 sub grep_avail {
 	my $package = shift;
-#	my $fields="Pre-Depends,Depends,Recommends,Suggests,Provides,Conflicts"
-#	my $pinfo pr_by
-#	my $RET=1
+	my $fields = "Pre-Depends,Depends,Recommends,Suggests,Provides,Conflicts";
+	my $pinfo;
 
-#	if pinfo="$(grep-available -XP $package -s $fields)"; then
-#		RET=0
-#	elif pinfo="$(grep-aptavail -XP $package -s $fields)"; then
-#		RET=0
-#	else
-#		# Is this a virtual package?
-#		pr_by="$(echo $(grep-aptavail -n -s Package \
-#			 -F Provides --eregex "(^| )$package(,|$)") | \
-#			 sed "s/ /, /g")"
-#		if [ "$pr_by" ]; then
-#			RET=0
-#			pinfo="Provided-By: $pr_by"
-#		fi
-#	fi
-#
-#	echo "$pinfo"
-#	return $RET
-	return "Pre-Depends: libc6 (>= 2.7-1),coreutils (>= 5.93-1),lzma
-Suggests: apt" if $package eq "dpkg";
-	return "";
+	$pinfo = `grep-available -XP $package -s $fields`;
+	if (! $pinfo) {
+		$pinfo = `grep-aptavail -XP $package -s $fields`;
+	}
+	if (! $pinfo) {
+		# Is this a virtual package?
+		$pinfo = `grep-aptavail -n -s Package -F Provides --eregex "(^| )$package(,|\$)"`;
+		my @provides = split(/\n/, $pinfo);
+		$pinfo = "Provided-By: " . join(",", @provides) if @provides;
+	}
+
+	chomp $pinfo;
+	$pinfo =~ s/, /,/g;
+	$pinfo =~ s/ \| /|/g;
+	return $pinfo;
 }
 
 sub grep_source {
 	my $package = shift;
-#	my $pinfo
-#	my $RET=0
+	my $pinfo;
 
-#	pinfo="$(apt-cache showsrc $package | grep -E "^Build-Depends(-Indep)?:")"
-#	[ "$pinfo" ] || RET=1
-#
-#	echo "$pinfo"
-#	return $RET
+	$pinfo = `apt-cache showsrc $package | grep -E "^Build-Depends(-Indep)?:"`;
+
+	chomp $pinfo;
+	$pinfo =~ s/, /,/g;
+	$pinfo =~ s/ \| /|/g;
+	return $pinfo;
 }
 
 sub is_installed {
 	my $package = shift;
 
-#	grep-status -XP -s Status $package | grep -q " installed$" || return 1
-	return 0
+	my $ret = system("grep-status -XP -s Status $package | " .
+			 "grep -q \" installed\$\"");
+	return ! $ret;
 }
 
 sub get_deps {
@@ -270,34 +265,24 @@ sub get_deps {
 }
 
 sub get_rdeps {
-	my $type = shift;
-	my $package = shift;
-	my $parent = shift;
+	my ($type, $package, $parent) = @_;
 	my @rdeps;
 
-#	for rdep in $(grep-aptavail -n -s Package -F $(full_type $type) \
-#				    --eregex "(^| )$package(,| |$)"); do
-#		# Guard against circular deps
-#		[ "$rdep" != "$parent" ] || continue
-#
-#		if (! $show_installed || is_installed($rdep)) {
-#			push(@rdeps, $rdep);
-#		}
-#	done
-#	return @rdeps;
-	return
+	$type = full_type($type);
+	my $pinfo = `grep-aptavail -n -s Package -F $type --eregex "(^| )$package(,| |\$)"`;
+	chomp $pinfo;
+	return if ! $pinfo;
+
+	for my $rdep (split(/\n/, $pinfo)) {
+		# Guard against circular deps
+		next if ($parent && $rdep eq $parent);
+
+		if (! $show_installed || is_installed($rdep)) {
+			push(@rdeps, $rdep);
+		}
+	}
+	return @rdeps;
 }
-
-
-# Convert dependency string a bit for easier parsing:
-# - remove space after ","
-# - remove space before and after "|"
-# - add space after package name if not versioned and no arch conditions
-#sub prep_deps {
-#	echo "$@" | sed -r "s:, :,:g
-#			    s: \| :|:g
-#			    s:([^]) ])(,|\||$):\1 \2:g"
-#}
 
 # For build dependencies, check if there are architecture conditions.
 # Any versioned dependency is returned.
@@ -877,7 +862,6 @@ sub find_rdeps {
 		push(@recurse_rdeps, @rdeps);
 		for my $rdep (@rdeps) {
 			my $pinfo = grep_avail($rdep);
-			#$pinfo = prep_deps($pinfo);
 			if (@provides && 
 			   print_rdeps_provides($rdep, $type, $package, $pinfo, ($parent,@provides))) {
 				next;
@@ -942,7 +926,6 @@ sub process_package {
 			process_missing($package);
 		}
 	}
-	#$pinfo = prep_deps($pinfo);
 
 	# Mark as done now to prevent recursion loops
 	$package_done{$package} = 1;
