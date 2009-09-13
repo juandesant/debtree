@@ -717,7 +717,10 @@ sub process_virtual {
 	my (@OR_pkgs, @OR_uninst);
 	my ($OR_name, $OR_has_inst, $OR_has_uninst);
 
-	if ($level == 1) {
+	if (exists $package_done{$package}) {
+		debug(3, "$level - virtual package '$package' already done");
+		return;
+	} elsif ($level == 1) {
 		debug(3, "$level - '@providers' provides '$package'");
 	} else {
 		debug(3, "$level - '$package' provided by: @providers");
@@ -728,7 +731,10 @@ sub process_virtual {
 	my $prov_cnt = @providers;
 	if ($prov_cnt == 1) {
 		my $provider = pop(@providers);
-		if ($level != 1 && exists $package_skip{$provider}) {
+		if ($ptype eq "V" && exists $package_done{$provider}) {
+			debug(3, "$level - '$package' has no other providers");
+			return;
+		} elsif ($level != 1 && exists $package_skip{$provider}) {
 			$package_skipped{$provider} = 1;
 		} else {
 			$prior_OR_dep = get_prior_OR_dep($provider);
@@ -746,7 +752,13 @@ sub process_virtual {
 				$package_done{$provider} = 1;
 			}
 
+			# Process as leaf to show other providers
+			if ($level == 1 && ! exists $package_done{$package}) {
+				process_package(0, $package, "", "V");
+			}
+
 			# Recurse to get dependencies for providing package
+			$package_done{$package} = 1;
 			if (! exists $package_done{$provider} && $ptype ne "L") {
 				process_package($level + 1, $provider, "", "");
 			}
@@ -799,9 +811,10 @@ sub process_virtual {
 	}
 
 	# Green arrow sufficiently identifies virtual package that is part of alternatives
-	if (!$prevdep_OR_name || exists $package_OR_seen{$package}) {
-		printf("\t\"$package\" [shape=octagon];\n");
+	if (! $prevdep_OR_name || exists $package_OR_seen{$package}) {
+		printf("\t\"$package\" [shape=octagon];\n") unless ($ptype eq "V");
 	}
+	$package_done{$package} = 1;
 }
 
 sub process_missing {
@@ -914,9 +927,6 @@ sub process_package {
 		}
 	}
 
-	# Mark as done now to prevent recursion loops
-	$package_done{$package} = 1;
-
 	my @providers = split(/,/, get_deps($pinfo, "Provided-By"));
 	if (@providers) {
 		# For leaf packages we need to check if it was an alternative
@@ -925,7 +935,10 @@ sub process_package {
 		process_virtual($level, $package, $prevdep_OR_name, $ptype, @providers);
 	}
 
-	return if ($ptype eq "L");
+	return if ($ptype eq "L" || $ptype eq "V");
+
+	# Mark as done now to prevent recursion loops
+	$package_done{$package} = 1;
 
 	my $deps;
 	if ($ptype eq "S") {
