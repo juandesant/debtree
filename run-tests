@@ -108,7 +108,7 @@ echo "$testset" | while read outfile package opts; do
 			# because of size restraints
 			rm -f $target/aptitude[5678].png
 			rm -f $target/debconf[678].png
-			rm -f $target/usage[12].png
+			rm -f $target/usage[124].png
 			rm -f $target/usage3.[12].png
 		fi
 	fi
