@@ -79,12 +79,13 @@ included in the graph using the available command line options.
 
 <p>
 The <tt>debtree</tt> script can be installed using this
-<a href="debtree_0.8.1_all.deb">package</a>
-(<a href="debtree_0.8.1.tar.gz">source</a>,
-<a href="debtree_0.8.1.dsc" type="text/plain">.dsc</a>).
+<a href="debtree_0.9.0_all.deb">package</a>
+(<a href="debtree_0.9.0.tar.gz">source</a>,
+<a href="debtree_0.9.0.dsc" type="text/plain">.dsc</a>).
 It is of course free software (GPL).
 </p><p>
-Its only dependency is <tt>dctrl-tools</tt>; <tt>graphviz</tt> is recommended.
+Its dependencies are <tt>perl</tt>, <tt>dctrl-tools</tt> and <tt>ucf</tt>;
+<tt>graphviz</tt> is recommended.
 </p><p>
 You can also check out its git repository using:<br />
 <tt><font size="-1">
@@ -92,18 +93,26 @@ $ git clone git://git.debian.org/collab-maint/debtree.git
 </font></tt>
 </p><p>
 Comments, bugs and patches to: <a href="mailto:elendil&#37;&#52;&#48;planet&#46;nl">Frans&nbsp;Pop</a>.
+</p><p>
+<b>Note</b><br />
+The option to print dependency paths has been dropped in version 0.9.0.
+I doubt anybody used that, and the same is possible using
+'<tt>aptitude&nbsp;why</tt>', which does a better job.
 </p>
 
 <h2 id="issues">Known issues</h2>
 
 <ul>
 <li>
-As <tt>debtree</tt> is currently written in <tt>bash</tt> and does individual
-calls to the <tt>dctrl-tools</tt> utilities, it is not terribly fast. But then
-again, it is not terribly slow either.
+As <tt>debtree</tt> was currently written in <tt>bash</tt>. I've started a
+conversion to perl in version 0.9.0, but that version still does individual
+calls to the <tt>dctrl-tools</tt> utilities. So, although about 20% faster
+than the shell version, it is not terribly fast. But then again, it is not
+terribly slow either.
 </li><li>
 In some cases graphs can get fairly messy when there are alternatives that
-have very similar dependencies. Good examples are <tt>apache</tt> and <tt>wesnoth</tt>.
+have very similar dependencies. Good examples are <tt>apache</tt> and
+<tt>wesnoth</tt> (although the last looks to have been cleaned up in Squeeze).
 </li>
 </ul>
 
@@ -116,12 +125,14 @@ current script.
 
 <ul>
 <li>
-Re-implement in a decent language. C++ seems most logical as that is also used
-in <tt>apt-cache</tt>, which could be used as a basis.<br />
-As I don't have the skills needed to do this myself: volunteers are welcome!
+Option to generate sub-graphs on separate pages.
+</li><li>
+Accept multiple packages as input to generate combined graphs.
 </li><li>
 Have the tool automatically determine points where to stop recursing or
 where to create sub-graphs on a separate page.
+</li><li>
+Maybe show aggregated package sizes.
 </li>
 </ul>
 
