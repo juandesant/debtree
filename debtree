@@ -557,8 +557,9 @@ sub print_rdeps_provides {
 			$pdep_set_cnt++;
 			$pdep_set_name = "pds" . $pdep_set_cnt;
 			debug(3, "Provider rdeps: new set '$pdep_set_name' - @dset");
+			my $cnt = 0;
 			for my $p (@dset) {
-				printf("\t\"$pdep_set_name\" -> \"$p\" [style=dotted];\n");
+				printf("\t\"$pdep_set_name\" -> \"$p\" [style=dotted,label=\"(".++$cnt.")\"];\n");
 			}
 			printf("\t\"$pdep_set_name\" [shape=circle,label=or];\n");
 			$pdep_set_list{$pdep_set_name}{plist} = join(",", @dset);

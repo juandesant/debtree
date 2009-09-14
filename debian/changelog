@@ -6,6 +6,7 @@ debtree (0.9.0) UNRELEASED; urgency=low
     still calls out to external dctrl-tools to get dependency info.
   * Show other providers for any virtual packages provided by the requested
     package.
+  * Show order of dependencies on virtual packages by numbering the arrows.
 
   [ Changes in unofficial release 0.8.1 - Sat, 12 Sep 2009 17:56:27 +0200 ]
   * Update script version and copyright in script.
