@@ -102,19 +102,19 @@ digraph "debian-installer" {
 	"debian-installer" -> "openssl" [color=darkgoldenrod,style=bold];
 	"openssl" -> "libssl0.9.8" [color=blue,label="(>= 0.9.8f-5)"];
 	"debian-installer" [style="setlinewidth(2)"]
-	"debhelper" [shape=diamond];
 	"apt" [shape=diamond];
-	"gnupg" [shape=diamond];
-	"dpkg" [shape=diamond];
 	"debconf" [shape=diamond];
+	"debhelper" [shape=diamond];
 	"debiandoc-sgml" [shape=diamond];
-	"xml-core" [shape=diamond];
-	"perl" [shape=diamond];
-	"zlib1g-dev" [shape=diamond];
-	"passwd" [shape=diamond];
-	"python" [shape=diamond];
+	"dpkg" [shape=diamond];
 	"gcc" [shape=diamond];
+	"gnupg" [shape=diamond];
+	"passwd" [shape=diamond];
+	"perl" [shape=diamond];
+	"python" [shape=diamond];
 	"python-minimal" [shape=diamond];
+	"xml-core" [shape=diamond];
+	"zlib1g-dev" [shape=diamond];
 }
 // Excluded dependencies:
-// libc6 libgcc1 libstdc++6 zlib1g libc6-dev libc-dev
+// libc-dev libc6 libc6-dev libgcc1 libstdc++6 zlib1g

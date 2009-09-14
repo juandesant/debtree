@@ -532,7 +532,7 @@ sub print_rdeps_provides {
 	my $regex = join("|", @pset);
 	my $deps = get_deps($pinfo, full_type($type));
 	for my $dep_or (split(/,/, $deps)) {
-		next unless $dep_or =~ /(^|\|)($regex)(\||$)/;
+		next unless $dep_or =~ /(^|\|)($regex)([| ]|$)/;
 
 		my @dset;
 		my $cnt = 0;
@@ -542,7 +542,7 @@ sub print_rdeps_provides {
 			$cnt++;
 
 			# Packages not in the pset are leaf packages
-			if (! grep(/^$d$/, @dset) && ! exists $package_ended{$d}) {
+			if (! grep(/^$d$/, @pset) && ! exists $package_ended{$d}) {
 				debug(4, "Provider rdeps: adding '$d' to ended (list)");
 				$package_ended{$d} = 1;
 			}
