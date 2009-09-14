@@ -532,7 +532,7 @@ sub print_rdeps_provides {
 	my $regex = join("|", @pset);
 	my $deps = get_deps($pinfo, full_type($type));
 	for my $dep_or (split(/,/, $deps)) {
-		next unless $dep_or =~ /(^|\|)($regex)( |$)/;
+		next unless $dep_or =~ /(^|\|)($regex)(\||$)/;
 
 		my @dset;
 		my $cnt = 0;
@@ -558,7 +558,7 @@ sub print_rdeps_provides {
 				printf("\t\"$pdep_set_name\" -> \"$p\" [style=dotted];\n");
 			}
 			printf("\t\"$pdep_set_name\" [shape=circle,label=or];\n");
-			$pdep_set_list{$pdep_set_name} = join(",", @dset);
+			$pdep_set_list{$pdep_set_name}{plist} = join(",", @dset);
 		}
 		print_dot_dependency($rdep, "", "", $pdep_set_name, $type, "", "");
 	}
