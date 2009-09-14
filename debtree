@@ -419,6 +419,9 @@ sub print_alternatives {
 			} else {
 				if ($t_or) {
 					$seen = 1;
+				} elsif (exists $package_done{$package} &&
+					 ! exists $package_ended{$package}) {
+					$seen = 1; 
 				} else {
 					# Not seen; mark as end package
 					$seen = 2;
