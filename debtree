@@ -224,6 +224,17 @@ sub full_type {
 	error("full_type: unrecognized dependency type '$type'");
 }
 
+sub short_type {
+	my $type = shift;
+
+	return "PD" if ($type eq "PreDepends");
+	return "D" if ($type eq "Depends");
+	return "R" if ($type eq "Recommends");
+	return "S" if ($type eq "Suggests");
+	return "C" if ($type eq "Conflicts");
+	error("short_type: unrecognized dependency type '$type'");
+}
+
 sub import_list {
 	my ($file, $type) = @_;
 
@@ -791,6 +802,42 @@ sub process_deps {
 	}
 }
 
+sub pre_process_deps {
+	my $level = shift;
+	my $package = shift;
+	my $prevdep_OR_name = shift;
+	my $p_apt = shift;
+	my @types = @_;
+
+	my $type = "";
+	my $delim = "";
+	my $deps = "";
+
+	for my $dep (@{ $$p_apt{DependsList} }) {
+		if ($$dep{DepType} ne $type) {
+			if ($deps) {
+				process_deps($level, $package, $deps, short_type($type), $prevdep_OR_name);
+				$delim = "";
+				$deps = "";
+			}
+			$type = $$dep{DepType};
+		}
+		next unless grep(/^$type$/, @types);
+		if ($deps) {
+			$deps .= $delim;
+		}
+		$deps .= $$dep{TargetPkg}{Name};
+		if (exists $$dep{CompTypeDeb}) {
+			$deps .= " ($$dep{CompTypeDeb} $$dep{TargetVer})"
+		}
+		$delim = ($$dep{CompType} & AptPkg::Dep::Or) ? '|' : ',';
+	}
+	# Ensure the last type also gets processed
+	if ($deps) {
+		process_deps($level, $package, $deps, short_type($type), $prevdep_OR_name);
+	}
+}
+
 sub process_virtual {
 	my $level = shift;
 	my $package = shift;
@@ -1032,25 +1079,12 @@ sub process_package {
 		process_deps($level, $package, $deps, "BI", "");
 	}
 
-	$deps = get_apt_deps($p_apt, "PreDepends");
-	process_deps($level, $package, $deps, "PD", $prevdep_OR_name);
-
-	$deps = get_apt_deps($p_apt, "Depends");
-	process_deps($level, $package, $deps, "D", $prevdep_OR_name);
-
-	if ($with_recommends) {
-		$deps = get_apt_deps($p_apt, "Recommends");
-		process_deps($level, $package, $deps, "R", $prevdep_OR_name);
-	}
-
-	if ($with_suggests) {
-		$deps = get_apt_deps($p_apt, "Suggests");
-		process_deps($level, $package, $deps, "S", $prevdep_OR_name);
-	}
-
-	if ($with_conflicts) {
-		$deps = get_apt_deps($p_apt, "Conflicts");
-		process_deps($level, $package, $deps, "C", $prevdep_OR_name);
+	if ($p_apt) {
+		my @types = qw/PreDepends Depends/;
+		push(@types, "Recommends") if $with_recommends;
+		push(@types, "Suggests") if $with_suggests;
+		push(@types, "Conflicts") if $with_conflicts;
+		pre_process_deps($level, $package, $prevdep_OR_name, $p_apt, @types);
 	}
 
 	# Provides and reverse dependencies for the requested package
