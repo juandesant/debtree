@@ -248,12 +248,6 @@ sub grep_avail {
 	if (! $pinfo) {
 		$pinfo = `grep-aptavail -XP $package -s $fields`;
 	}
-	if (! $pinfo) {
-		# Is this a virtual package?
-		$pinfo = `grep-aptavail -n -s Package -F Provides --eregex "(^| )$package(,|\$)"`;
-		my @provides = split(/\n/, $pinfo);
-		$pinfo = "Provided-By: " . join(",", @provides) if @provides;
-	}
 
 	chomp $pinfo;
 	$pinfo =~ s/, /,/g;
@@ -271,6 +265,14 @@ sub grep_source {
 	$pinfo =~ s/, /,/g;
 	$pinfo =~ s/ \| /|/g;
 	return $pinfo;
+}
+
+sub get_providers {
+	my $package = shift;
+	my $pinfo = `grep-aptavail -n -s Package -F Provides --eregex "(^| )$package(,|\$)"`;
+	return unless $pinfo;
+	chomp $pinfo;
+	return split(/\n/, $pinfo);
 }
 
 sub is_installed {
@@ -967,28 +969,29 @@ sub process_package {
 
 	if ($ptype eq "S") {
 		$pinfo = grep_source($package);
-	} else {
-		$pinfo = grep_avail($package);
-	}
-
-	if ($ptype eq "B" || $ptype eq "S") {
-		if ($pinfo) {
-			print_dot_header();
-		} else {
+		if (! $pinfo) {
 			error("no dependency info found for '$package'");
 		}
 	} else {
+		$pinfo = grep_avail($package);
 		if (! $pinfo) {
-			process_missing($package);
+			if ($ptype eq "B") {
+				error("no dependency info found for '$package'");
+			}
+			my @providers = get_providers($package);
+			if (@providers) {
+				# For leaf packages we need to check if it was an alternative
+				$prevdep_OR_name = get_prior_OR_dep($package) if ($ptype eq "L");
+
+				process_virtual($level, $package, $prevdep_OR_name, $ptype, @providers);
+			} else {
+				process_missing($package);
+			}
 		}
 	}
 
-	my @providers = split(/,/, get_deps($pinfo, "Provided-By"));
-	if (@providers) {
-		# For leaf packages we need to check if it was an alternative
-		$prevdep_OR_name = get_prior_OR_dep($package) if ($ptype eq "L");
-
-		process_virtual($level, $package, $prevdep_OR_name, $ptype, @providers);
+	if ($ptype eq "B" || $ptype eq "S") {
+		print_dot_header();
 	}
 
 	return if ($ptype eq "L" || $ptype eq "V");
