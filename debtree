@@ -213,10 +213,8 @@ sub error {
 
 sub full_type {
 	my $type = shift;
-	my $compat = shift;
 
-	return "PreDepends" if ($type eq "PD" && ! $compat);
-	return "Pre-Depends" if ($type eq "PD" && $compat);
+	return "PreDepends" if ($type eq "PD");
 	return "Depends" if ($type eq "D");
 	return "Recommends" if ($type eq "R");
 	return "Suggests" if ($type eq "S");
@@ -327,24 +325,38 @@ sub get_provides {
 	return @pset if @pset;
 }
 
+# Check to see that the version we get matches the one that would
+# be selected for the rest of the graph.
+sub check_version {
+	my ($package, $version) = @_;
+	my $p_apt = apt_pinfo($package);
+	return ($$p_apt{VerStr} eq $version);
+}
+
 sub get_rdeps {
-	my ($type, $package, $parent) = @_;
-	my @rdeps;
+	my ($package, $parent, @types) = @_;
+	my %rdeps;
 
-	$type = full_type($type, 1);
-	my $pinfo = `grep-aptavail -n -s Package -F $type --eregex "(^| )$package(,| |\$)"`;
-	chomp $pinfo;
-	return if ! $pinfo;
+	my $p_apt = $cache->get($package);
+	return unless ($p_apt && exists $$p_apt{RevDependsList});
 
-	for my $rdep (split(/\n/, $pinfo)) {
-		# Guard against circular deps
-		next if ($parent && $rdep eq $parent);
+	for my $rdep (@{ $$p_apt{RevDependsList} }) {
+		my $pname = $$rdep{ParentPkg}{Name};
+		my $type = $$rdep{DepType};
 
-		if (! $show_installed || is_installed($rdep)) {
-			push(@rdeps, $rdep);
-		}
+		next unless grep(/^$type$/, @types);
+		next if ($parent && $pname eq $parent);
+		next unless check_version($pname, $$rdep{ParentVer}{VerStr});
+		next unless (! $show_installed || is_installed($pname));
+		# As long as we don't show versions for rdeps, avoid duplicates
+		# due to double dependencies; for example, gimp has:
+		#    Depends: libgimp2.0 (>= 2.4.7), libgimp2.0 (< 2.4.7-z)
+		next if grep(/^$pname$/, @{ $rdeps{$type} });
+
+		push(@{ $rdeps{$type} }, $pname);
 	}
-	return @rdeps;
+
+	return %rdeps;
 }
 
 # For build dependencies, check if there are architecture conditions.
@@ -624,7 +636,7 @@ sub print_rdeps_provides {
 
 	my $regex = join("|", @pset);
 	my $p_apt = apt_pinfo($rdep);
-	my $deps = get_apt_deps($p_apt, full_type($type, 0));
+	my $deps = get_apt_deps($p_apt, full_type($type));
 	for my $dep_or (split(/,/, $deps)) {
 		next unless $dep_or =~ /(^|\|)($regex)([| ]|$)/;
 
@@ -970,21 +982,23 @@ sub find_rdeps {
 	$pstatus{$package}{rdep} = 1;
 
 	my @recurse_rdeps;
-	my @types = qw/PD D/;
-	push(@types, "R") if $with_recommends;
-	for my $type (@types) {
-		my @rdeps=get_rdeps($type, $package, $parent);
+	my @types = qw/PreDepends Depends/;
+	push(@types, "Recommends") if $with_recommends;
+	my %rdeps = get_rdeps($package, $parent, @types);
+	for my $type (sort keys %rdeps) {
+		my $stype = short_type($type);
+		my @rdeps = @{ $rdeps{$type} };
 		my $cnt = @rdeps;
 		if ($cnt > 0) {
-			debug(4, "$level - " . ($show_installed ? "installed " : "") . "$type rdeps for '$package' ($cnt): @rdeps");
+			debug(4, "$level - " . ($show_installed ? "installed " : "") . "$stype rdeps for '$package' ($cnt): @rdeps");
 		}
 
 		my $opts;
 		if ($level < -1 && $cnt > $max_rdeps) {
-			$opts = "color=purple,style=bold" if ($type eq "PD");
-			$opts = "color=blue" if ($type eq "D");
-			$opts = "" if ($type eq "R");
-			$opts = " [label=\"-$cnt-\",$opts]"; # FIXME if type=R ?
+			$opts = "color=purple,style=bold" if ($stype eq "PD");
+			$opts = "color=blue" if ($stype eq "D");
+			$opts = "" if ($stype eq "R");
+			$opts = " [label=\"-$cnt-\",$opts]"; # FIXME if stype=R ?
 			printf("\t\"RD_$package\" -> \"$package\" $opts;\n");
 			$has_max = 1;
 			next;
@@ -993,13 +1007,13 @@ sub find_rdeps {
 		push(@recurse_rdeps, @rdeps);
 		for my $rdep (@rdeps) {
 			if (@provides && 
-			   print_rdeps_provides($rdep, $type, $package, ($parent,@provides))) {
+			   print_rdeps_provides($rdep, $stype, $package, ($parent,@provides))) {
 				next;
 			}
 
 			if (! exists $pstatus{$rdep}{done}) {
 				debug(4, "$level - adding reverse dependency '$rdep'->'$package'");
-				print_dot_dependency($rdep, "", "", $package, $type, "", 1);
+				print_dot_dependency($rdep, "", "", $package, $stype, "", 1);
 			} else {
 				debug(4, "$level - package '$rdep' is already done");
 			}
