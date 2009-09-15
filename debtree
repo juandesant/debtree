@@ -66,10 +66,10 @@ chomp $ARCH;
 
 # Hash containing skip and end packages read from config files
 my %clist;
+# Hash containing global package status info; used types are:
+# skipped, ended, done, leaf, unknown, OR_seen, rdep, prov_rdeps
+my %pstatus;
 
-my (%package_skipped, %package_ended);
-my (%package_done, %package_leaf, %package_unknown, %package_OR_seen);
-my (%package_rdep, %package_prov_rdeps);
 my (%OR_dep_list, %OR_virt_list, %pdep_set_list);
 my $OR_dep_cnt = 0;
 my $OR_virt_cnt = 0;
@@ -327,7 +327,7 @@ sub first_set_with_package {
 
 sub get_prior_OR_dep {
 	my $package = shift;
-	if (! exists $package_OR_seen{$package}) {
+	if (! exists $pstatus{OR_seen}{$package}) {
 		return first_set_with_package($package, \%OR_dep_list);
 	}
 }
@@ -347,7 +347,7 @@ sub mark_rdep {
 
 sub mark_endpackage {
 	my $package = shift;
-	if (! get_prior_OR_dep($package) && ! exists $package_rdep{$package}) {
+	if (! get_prior_OR_dep($package) && ! exists $pstatus{rdep}{$package}) {
 		printf("\t\"$package\" [shape=diamond];\n");
 		if ($show_installed && is_installed($package)) {
 			mark_installed(0, $package);
@@ -393,7 +393,7 @@ sub print_dot_OR_main {
 	# Mark packages previously encountered
 	if ($package eq "...") {
 		print("<other> ...");
-	} elsif (exists $package_unknown{$package}) {
+	} elsif (exists $pstatus{unknown}{$package}) {
 		print("<$package> ?$package?");
 	} elsif ($seen == 2) {
 		print("<$package> \\{$package\\}");
@@ -412,13 +412,13 @@ sub print_alternatives {
 	for my $package (split(/,/,  $OR_pkgs)) {
 		# Is this package also part of an earlier set of alternatives?
 		my $seen = 0;
-		if (exists $package_OR_seen{$package}) {
+		if (exists $pstatus{OR_seen}{$package}) {
 			$seen = 1;
 		} else {
 			my $t_or = first_set_with_package($package, \%OR_dep_list);
 			if ($type eq "D") {
 				if (exists $clist{end}{$package} ||
-				    exists $package_ended{$package}) {
+				    exists $pstatus{ended}{$package}) {
 					$seen = 2;
 				} elsif ($OR_dep_list{$t_or}{plist} ne $OR_pkgs) {
 					$seen = 1;
@@ -426,8 +426,8 @@ sub print_alternatives {
 			} else {
 				if ($t_or) {
 					$seen = 1;
-				} elsif (exists $package_done{$package} &&
-					 ! exists $package_ended{$package}) {
+				} elsif (exists $pstatus{done}{$package} &&
+					 ! exists $pstatus{ended}{$package}) {
 					$seen = 1; 
 				} else {
 					# Not seen; mark as end package
@@ -512,12 +512,12 @@ sub print_dot_dependency {
 	# For now, marked by using braces in the labels (see print_dot_OR_main)
 	if (exists $clist{end}{$dep_package} && ! $rdep &&
 	    ! $OR_name && ! $prior_OR_dep &&
-	    ! exists $package_done{$dep_package}) {
+	    ! exists $pstatus{done}{$dep_package}) {
 		if ($dep_type ne "C") {
 			debug(4, "Adding '$dep_package' ($dep_type) to ended (list)");
-			$package_ended{$dep_package} = 1;
+			$pstatus{ended}{$dep_package} = 1;
 		}
-		$package_done{$dep_package} = 1;
+		$pstatus{done}{$dep_package} = 1;
 	}
 }
 
@@ -528,13 +528,13 @@ sub print_rdeps_provides {
 	my $pinfo = shift;
 	my @pset = @_;
 
-	if (! exists $package_prov_rdeps{$rdep}) {
+	if (! exists $pstatus{prov_rdeps}{$rdep}) {
 		debug(4, "Provider rdeps: $rdep - $type - $package - @pset");
 	} else {
 		debug(4, "Provider rdeps: $rdep is already done");
 		return 1
 	}
-	$package_prov_rdeps{$rdep} = 1;
+	$pstatus{prov_rdeps}{$rdep} = 1;
 
 	my $regex = join("|", @pset);
 	my $deps = get_deps($pinfo, full_type($type));
@@ -549,9 +549,9 @@ sub print_rdeps_provides {
 			$cnt++;
 
 			# Packages not in the pset are leaf packages
-			if (! grep(/^$d$/, @pset) && ! exists $package_ended{$d}) {
+			if (! grep(/^$d$/, @pset) && ! exists $pstatus{ended}{$d}) {
 				debug(4, "Provider rdeps: adding '$d' to ended (list)");
-				$package_ended{$d} = 1;
+				$pstatus{ended}{$d} = 1;
 			}
 		}
 		return 0 if ($cnt == 1);
@@ -593,7 +593,7 @@ sub process_deps {
 			for my $dep_or (split(/\|/, $dep)) {
 				my ($dep_package) = $dep_or =~ /^([^ ]+) ?/;
 				if (exists $clist{skip}{$dep_package}) {
-					$package_skipped{$dep_package} = 1;
+					$pstatus{skipped}{$dep_package} = 1;
 					$OR_has_skip = 1;
 					# Account for installation status
 					if ($show_installed) {
@@ -638,10 +638,10 @@ sub process_deps {
 					for my $dep_package (@OR_pkgs) {
 						# Has this dependency already been
 						# processed as a separate package?
-						if (exists $package_done{$dep_package} &&
+						if (exists $pstatus{done}{$dep_package} &&
 						   ! first_set_with_package($dep_package, \%OR_dep_list) &&
-						   ! exists $package_OR_seen{$dep_package}) {
-							$package_OR_seen{$dep_package} = 1;
+						   ! exists $pstatus{OR_seen}{$dep_package}) {
+							$pstatus{OR_seen}{$dep_package} = 1;
 						}
 					}
 
@@ -676,7 +676,7 @@ sub process_deps {
 			}
 
 			if (exists $clist{skip}{$dep_package}) {
-				$package_skipped{$dep_package} = 1;
+				$pstatus{skipped}{$dep_package} = 1;
 				next;
 			} elsif ($dep_type eq "C" && ! $with_vconflicts && $pkgdep) {
 				# Include only unversioned conflicts
@@ -684,28 +684,28 @@ sub process_deps {
 			}
 			print_dot_dependency($package, $OR_name, $prevdep_OR_name, $dep_package, $dep_type, $pkgdep);
 
-			if (exists $package_done{$dep_package} ||
+			if (exists $pstatus{done}{$dep_package} ||
 			    exists $clist{end}{$dep_package}) {
 				# do nothing
 			} else {
 				# Recurse through dependencies, except for Suggests
 				# and Conflicts
 				if ($dep_type eq "S") {
-					if (! exists $package_done{$dep_package}) {
+					if (! exists $pstatus{done}{$dep_package}) {
 						debug(4, "Adding '$dep_package' ($dep_type) to ended");
-						$package_ended{$dep_package} = 1;
-						$package_leaf{$dep_package} = 1;
+						$pstatus{ended}{$dep_package} = 1;
+						$pstatus{leaf}{$dep_package} = 1;
 					}
 				} elsif ($dep_type eq "C") {
-					if (! exists $package_done{$dep_package}) {
-						$package_leaf{$dep_package} = 1;
+					if (! exists $pstatus{done}{$dep_package}) {
+						$pstatus{leaf}{$dep_package} = 1;
 					}
 				} else {
 					if ($level < $max_depth) {
 						process_package($level + 1, $dep_package, $OR_name, "");
 					} else {
 						debug(4, "Adding '$dep_package' ($dep_type) to ended (max)");
-						$package_ended{$dep_package} = 1;
+						$pstatus{ended}{$dep_package} = 1;
 					}
 				}
 			}
@@ -725,7 +725,7 @@ sub process_virtual {
 	my (@OR_pkgs, @OR_uninst);
 	my ($OR_name, $OR_has_inst, $OR_has_uninst);
 
-	if (exists $package_done{$package}) {
+	if (exists $pstatus{done}{$package}) {
 		debug(3, "$level - virtual package '$package' already done");
 		return;
 	} elsif ($level == 1) {
@@ -739,11 +739,11 @@ sub process_virtual {
 	my $prov_cnt = @providers;
 	if ($prov_cnt == 1) {
 		my $provider = pop(@providers);
-		if ($ptype eq "V" && exists $package_done{$provider}) {
+		if ($ptype eq "V" && exists $pstatus{done}{$provider}) {
 			debug(3, "$level - '$package' has no other providers");
 			return;
 		} elsif ($level != 1 && exists $clist{skip}{$provider}) {
-			$package_skipped{$provider} = 1;
+			$pstatus{skipped}{$provider} = 1;
 		} else {
 			$prior_OR_dep = get_prior_OR_dep($provider);
 			my $p_provider = cjoin_quoted($prior_OR_dep, ":", $provider);
@@ -754,20 +754,20 @@ sub process_virtual {
 			}
 
 			if (exists $clist{end}{$provider} && ! $prior_OR_dep &&
-			   ! exists $package_done{$provider}) {
+			   ! exists $pstatus{done}{$provider}) {
 				debug(4, "Adding '$provider' (provides) to ended (list)");
-				$package_ended{$provider} = 1;
-				$package_done{$provider} = 1;
+				$pstatus{ended}{$provider} = 1;
+				$pstatus{done}{$provider} = 1;
 			}
 
 			# Process as leaf to show other providers
-			if ($level == 1 && ! exists $package_done{$package}) {
+			if ($level == 1 && ! exists $pstatus{done}{$package}) {
 				process_package(0, $package, "", "V");
 			}
 
 			# Recurse to get dependencies for providing package
-			$package_done{$package} = 1;
-			if (! exists $package_done{$provider} && $ptype ne "L") {
+			$pstatus{done}{$package} = 1;
+			if (! exists $pstatus{done}{$provider} && $ptype ne "L") {
 				process_package($level + 1, $provider, "", "");
 			}
 		}
@@ -819,10 +819,10 @@ sub process_virtual {
 	}
 
 	# Green arrow sufficiently identifies virtual package that is part of alternatives
-	if (! $prevdep_OR_name || exists $package_OR_seen{$package}) {
+	if (! $prevdep_OR_name || exists $pstatus{OR_seen}{$package}) {
 		printf("\t\"$package\" [shape=octagon];\n") unless ($ptype eq "V");
 	}
-	$package_done{$package} = 1;
+	$pstatus{done}{$package} = 1;
 }
 
 sub process_missing {
@@ -832,7 +832,7 @@ sub process_missing {
 	if (! $prior_OR_dep) {
 		printf("\t\"$package\" [style=filled,fillcolor=oldlace];\n");
 	} else {
-		$package_unknown{$package} = 1;
+		$pstatus{unknown}{$package} = 1;
 	}
 }
 
@@ -844,7 +844,7 @@ sub find_rdeps {
 	my $has_max = 0;
 
 	info(2, "Level $level: processing reverse dependencies for $package");
-	$package_rdep{$package} = 1;
+	$pstatus{rdep}{$package} = 1;
 
 	my @recurse_rdeps;
 	my @types = qw/PD D/;
@@ -875,7 +875,7 @@ sub find_rdeps {
 				next;
 			}
 
-			if (! exists $package_done{$rdep}) {
+			if (! exists $pstatus{done}{$rdep}) {
 				debug(4, "$level - adding reverse dependency '$rdep'->'$package'");
 				print_dot_dependency($rdep, "", "", $package, $type, "", 1);
 			} else {
@@ -885,8 +885,8 @@ sub find_rdeps {
 	}
 
 	for my $rdep (@recurse_rdeps) {
-		if (! exists $package_rdep{$rdep}) {
-			if (! exists $package_done{$rdep}) {
+		if (! exists $pstatus{rdep}{$rdep}) {
+			if (! exists $pstatus{done}{$rdep}) {
 				mark_rdep($rdep);
 			}
 			next unless ($level > -$rdeps_depth);
@@ -912,9 +912,9 @@ sub process_package {
 
 	info(2, "Level $level: processing $package" . ($ptype ? " ($ptype)" : ""));
 
-	if ($ptype ne "L" && exists $package_ended{$package}) {
+	if ($ptype ne "L" && exists $pstatus{ended}{$package}) {
 		debug(4, "Removing '$package' from ended");
-		delete $package_ended{$package};
+		delete $pstatus{ended}{$package};
 	}
 
 	if ($ptype eq "S") {
@@ -946,7 +946,7 @@ sub process_package {
 	return if ($ptype eq "L" || $ptype eq "V");
 
 	# Mark as done now to prevent recursion loops
-	$package_done{$package} = 1;
+	$pstatus{done}{$package} = 1;
 
 	my $deps;
 	if ($ptype eq "S") {
@@ -1045,8 +1045,8 @@ process_package(1, $requested_package, "", $ptype);
 # For packages we did not yet recurse through, check if they are virtual
 # packages as we want to show the providing package(s)
 info(2, "Processing leaf packages");
-for my $dep_package (sort keys %package_leaf) {
-	if (! exists $package_done{$dep_package}) {
+for my $dep_package (sort keys %{ $pstatus{leaf} }) {
+	if (! exists $pstatus{done}{$dep_package}) {
 		process_package(0, $dep_package, "", "L");
 	}
 }
@@ -1064,16 +1064,16 @@ for my $OR_name (sort keys %OR_virt_list) {
 
 # Set shape to diamond for packages whose dependencies we did not
 # recurse into
-for my $package (sort keys %package_ended) {
+for my $package (sort keys %{ $pstatus{ended} }) {
 	mark_endpackage($package);
 }
 
 print_dot_footer();
 
 
-if (keys(%package_skipped)) {
+if (keys(%{ $pstatus{skipped} })) {
 	my @plist;
-	foreach my $package (sort keys %package_skipped) {
+	foreach my $package (sort keys %{ $pstatus{skipped} }) {
 		push(@plist, $package);
 	}
 		
