@@ -213,8 +213,10 @@ sub error {
 
 sub full_type {
 	my $type = shift;
+	my $compat = shift;
 
-	return "Pre-Depends" if ($type eq "PD");
+	return "PreDepends" if ($type eq "PD" && ! $compat);
+	return "Pre-Depends" if ($type eq "PD" && $compat);
 	return "Depends" if ($type eq "D");
 	return "Recommends" if ($type eq "R");
 	return "Suggests" if ($type eq "S");
@@ -239,22 +241,6 @@ sub import_list {
 	close LIST;
 }
 
-sub grep_avail {
-	my $package = shift;
-	my $fields = "Pre-Depends,Depends,Recommends,Suggests,Provides,Conflicts";
-	my $pinfo;
-
-	$pinfo = `grep-available -XP $package -s $fields`;
-	if (! $pinfo) {
-		$pinfo = `grep-aptavail -XP $package -s $fields`;
-	}
-
-	chomp $pinfo;
-	$pinfo =~ s/, /,/g;
-	$pinfo =~ s/ \| /|/g;
-	return $pinfo;
-}
-
 sub grep_source {
 	my $package = shift;
 	my $pinfo;
@@ -275,14 +261,6 @@ sub get_providers {
 	return split(/\n/, $pinfo);
 }
 
-sub is_installed {
-	my $package = shift;
-
-	my $ret = system("grep-status -XP -s Status $package | " .
-			 "grep -q \" installed\$\"");
-	return ! $ret;
-}
-
 sub get_deps {
 	my ($pinfo, $type) = @_;
 	my ($dep) = $pinfo =~ /^$type: (.*)/m;
@@ -290,11 +268,59 @@ sub get_deps {
 	return $dep;
 }
 
+sub apt_pinfo {
+	my $package = shift;
+
+	my $p_apt = $cache->get($package);
+	return unless $p_apt;
+	if (exists $$p_apt{CurrentVer}) {
+		return $$p_apt{CurrentVer};
+	} elsif (exists $$p_apt{VersionList}) {
+		return pop(@{ $$p_apt{VersionList} });
+	}
+}
+
+sub get_apt_deps {
+	my ($p_apt, $type) = @_;
+	my $delim="";
+	my $deps = "";
+
+	return "" unless $p_apt;
+	for my $dep (@{ $$p_apt{DependsList} }) {
+		next if ($$dep{DepType} ne $type);
+		if ($deps) {
+			$deps .= $delim;
+		}
+		$deps .= $$dep{TargetPkg}{Name};
+		if (exists $$dep{CompTypeDeb}) {
+			$deps .= " ($$dep{CompTypeDeb} $$dep{TargetVer})"
+		}
+		$delim = ($$dep{CompType} & AptPkg::Dep::Or) ? '|' : ',';
+	}
+	#debug(0, "$type --- $deps");
+	return $deps;
+}
+
+sub is_installed {
+	my $package = shift;
+
+	my $p_apt = $cache->get($package);
+	return ($p_apt && $$p_apt{CurrentState} eq "Installed");
+}
+
+sub get_provides {
+	my $p_apt = shift;
+
+	return unless exists $$p_apt{ProvidesList};
+	my @pset = map($_->{Name}, @{ $$p_apt{ProvidesList} });
+	return @pset if @pset;
+}
+
 sub get_rdeps {
 	my ($type, $package, $parent) = @_;
 	my @rdeps;
 
-	$type = full_type($type);
+	$type = full_type($type, 1);
 	my $pinfo = `grep-aptavail -n -s Package -F $type --eregex "(^| )$package(,| |\$)"`;
 	chomp $pinfo;
 	return if ! $pinfo;
@@ -575,7 +601,6 @@ sub print_rdeps_provides {
 	my $rdep = shift;
 	my $type = shift;
 	my $package = shift;
-	my $pinfo = shift;
 	my @pset = @_;
 
 	if (! exists $pstatus{$rdep}{prov_rdeps}) {
@@ -587,7 +612,8 @@ sub print_rdeps_provides {
 	$pstatus{$rdep}{prov_rdeps} = 1;
 
 	my $regex = join("|", @pset);
-	my $deps = get_deps($pinfo, full_type($type));
+	my $p_apt = apt_pinfo($rdep);
+	my $deps = get_apt_deps($p_apt, full_type($type, 0));
 	for my $dep_or (split(/,/, $deps)) {
 		next unless $dep_or =~ /(^|\|)($regex)([| ]|$)/;
 
@@ -919,9 +945,8 @@ sub find_rdeps {
 
 		push(@recurse_rdeps, @rdeps);
 		for my $rdep (@rdeps) {
-			my $pinfo = grep_avail($rdep);
 			if (@provides && 
-			   print_rdeps_provides($rdep, $type, $package, $pinfo, ($parent,@provides))) {
+			   print_rdeps_provides($rdep, $type, $package, ($parent,@provides))) {
 				next;
 			}
 
@@ -958,7 +983,7 @@ sub process_package {
 	my $package = shift;
 	my $prevdep_OR_name = shift;
 	my $ptype = shift;
-	my $pinfo;
+	my ($p_apt, $pinfo);
 
 	info(2, "Level $level: processing $package" . ($ptype ? " ($ptype)" : ""));
 
@@ -973,8 +998,8 @@ sub process_package {
 			error("no dependency info found for '$package'");
 		}
 	} else {
-		$pinfo = grep_avail($package);
-		if (! $pinfo) {
+		$p_apt = apt_pinfo($package);
+		if (! $p_apt) {
 			if ($ptype eq "B") {
 				error("no dependency info found for '$package'");
 			}
@@ -1007,30 +1032,30 @@ sub process_package {
 		process_deps($level, $package, $deps, "BI", "");
 	}
 
-	$deps = get_deps($pinfo, "Pre-Depends");
+	$deps = get_apt_deps($p_apt, "PreDepends");
 	process_deps($level, $package, $deps, "PD", $prevdep_OR_name);
 
-	$deps = get_deps($pinfo, "Depends");
+	$deps = get_apt_deps($p_apt, "Depends");
 	process_deps($level, $package, $deps, "D", $prevdep_OR_name);
 
 	if ($with_recommends) {
-		$deps = get_deps($pinfo, "Recommends");
+		$deps = get_apt_deps($p_apt, "Recommends");
 		process_deps($level, $package, $deps, "R", $prevdep_OR_name);
 	}
 
 	if ($with_suggests) {
-		$deps=get_deps($pinfo, "Suggests");
+		$deps = get_apt_deps($p_apt, "Suggests");
 		process_deps($level, $package, $deps, "S", $prevdep_OR_name);
 	}
 
 	if ($with_conflicts) {
-		$deps = get_deps($pinfo, "Conflicts");
+		$deps = get_apt_deps($p_apt, "Conflicts");
 		process_deps($level, $package, $deps, "C", $prevdep_OR_name);
 	}
 
 	# Provides and reverse dependencies for the requested package
 	if ($level == 1 && ($with_provides || $show_rdeps)) {
-		my @provides = split(/,/, get_deps($pinfo, "Provides"));
+		my @provides = get_provides($p_apt);
 		if (! $with_provides || ! @provides) {
 			if ($show_rdeps) {
 				debug(4, "Find rdeps for the package");
