@@ -150,6 +150,39 @@ if ($show_installed) {
 	$rdep_color = "ivory";
 }
 
+## Initialize AptPkg's interface
+
+use AptPkg::Config '$_config';
+use AptPkg::System '$_system';
+use AptPkg::Source;
+use AptPkg::Cache;
+$_config->init();
+$_system = $_config->system();
+
+if ($verbose) {
+	# Redirect AptPkg's little ditty so it doesn't go into our files
+	open(OLDOUT, ">&STDOUT");
+	open(STDOUT, ">&STDERR");
+	select(STDERR); $| = 1;
+} else {
+	$_config->{quiet} = 2;
+}
+
+# Create instances to search for Depends and, if needed, Build-Depends
+my $cache = AptPkg::Cache->new();
+my $source;
+if ($build_dep) {
+	$source = AptPkg::Source->new();
+}
+
+if ($verbose) {
+	# Restore the redirects
+	close(STDOUT);
+	open(STDOUT, ">&OLDOUT");
+	close(OLDOUT);
+	select(STDOUT); $| = 0;
+}
+
 ### LOG FUNCTIONS ###
 
 sub mylog {

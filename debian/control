@@ -10,7 +10,7 @@ Vcs-Browser: http://git.debian.org/?p=collab-maint/debtree.git
 
 Package: debtree
 Architecture: all
-Depends: ${perl:Depends}, ${misc:Depends}, ucf, dctrl-tools
+Depends: ${misc:Depends}, ${perl:Depends}, libapt-pkg-perl, ucf, dctrl-tools
 Recommends: graphviz
 Description: package dependency graphs on steroids
  Very powerful and versatile tool for generating dependency graphs showing the
