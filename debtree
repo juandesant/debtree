@@ -64,7 +64,10 @@ my $do_condense = 0;
 my $ARCH=`dpkg --print-architecture`;
 chomp $ARCH;
 
-my (%package_skip, %package_skipped, %package_end, %package_ended);
+# Hash containing skip and end packages read from config files
+my %clist;
+
+my (%package_skipped, %package_ended);
 my (%package_done, %package_leaf, %package_unknown, %package_OR_seen);
 my (%package_rdep, %package_prov_rdeps);
 my (%OR_dep_list, %OR_virt_list, %pdep_set_list);
@@ -187,7 +190,7 @@ sub full_type {
 }
 
 sub import_list {
-	my ($file, $list) = @_;
+	my ($file, $type) = @_;
 
 	if (open LIST, "<$file") {
 		while (<LIST>) {
@@ -196,7 +199,7 @@ sub import_list {
 			$line =~ s/\s+$// if $line;
 			next unless $line;
 			for my $package (split(/ +/, $line)) {
-				$$list{$package} = 1;
+				$clist{$type}{$package} = 1;
 			}
 		}
 	}
@@ -414,7 +417,7 @@ sub print_alternatives {
 		} else {
 			my $t_or = first_set_with_package($package, \%OR_dep_list);
 			if ($type eq "D") {
-				if (exists $package_end{$package} ||
+				if (exists $clist{end}{$package} ||
 				    exists $package_ended{$package}) {
 					$seen = 2;
 				} elsif ($OR_dep_list{$t_or}{plist} ne $OR_pkgs) {
@@ -507,7 +510,7 @@ sub print_dot_dependency {
 
 	# How can "end" packages that are part of an OR be identified?
 	# For now, marked by using braces in the labels (see print_dot_OR_main)
-	if (exists $package_end{$dep_package} && ! $rdep &&
+	if (exists $clist{end}{$dep_package} && ! $rdep &&
 	    ! $OR_name && ! $prior_OR_dep &&
 	    ! exists $package_done{$dep_package}) {
 		if ($dep_type ne "C") {
@@ -589,7 +592,7 @@ sub process_deps {
 			# Gather information about alternatives
 			for my $dep_or (split(/\|/, $dep)) {
 				my ($dep_package) = $dep_or =~ /^([^ ]+) ?/;
-				if (exists $package_skip{$dep_package}) {
+				if (exists $clist{skip}{$dep_package}) {
 					$package_skipped{$dep_package} = 1;
 					$OR_has_skip = 1;
 					# Account for installation status
@@ -672,7 +675,7 @@ sub process_deps {
 				next;
 			}
 
-			if (exists $package_skip{$dep_package}) {
+			if (exists $clist{skip}{$dep_package}) {
 				$package_skipped{$dep_package} = 1;
 				next;
 			} elsif ($dep_type eq "C" && ! $with_vconflicts && $pkgdep) {
@@ -682,7 +685,7 @@ sub process_deps {
 			print_dot_dependency($package, $OR_name, $prevdep_OR_name, $dep_package, $dep_type, $pkgdep);
 
 			if (exists $package_done{$dep_package} ||
-			    exists $package_end{$dep_package}) {
+			    exists $clist{end}{$dep_package}) {
 				# do nothing
 			} else {
 				# Recurse through dependencies, except for Suggests
@@ -739,7 +742,7 @@ sub process_virtual {
 		if ($ptype eq "V" && exists $package_done{$provider}) {
 			debug(3, "$level - '$package' has no other providers");
 			return;
-		} elsif ($level != 1 && exists $package_skip{$provider}) {
+		} elsif ($level != 1 && exists $clist{skip}{$provider}) {
 			$package_skipped{$provider} = 1;
 		} else {
 			$prior_OR_dep = get_prior_OR_dep($provider);
@@ -750,7 +753,7 @@ sub process_virtual {
 				printf("\t$p_package -> $p_provider [dir=back,arrowtail=inv,color=green];\n");
 			}
 
-			if (exists $package_end{$provider} && ! $prior_OR_dep &&
+			if (exists $clist{end}{$provider} && ! $prior_OR_dep &&
 			   ! exists $package_done{$provider}) {
 				debug(4, "Adding '$provider' (provides) to ended (list)");
 				$package_ended{$provider} = 1;
@@ -1019,10 +1022,10 @@ if (! $show_all) {
 		if (-r $file) {
 			info(3, "Using list of 'skip' packages from $file");
 			if (! $no_skip) {
-				import_list($file, \%package_skip);
+				import_list($file, "skip");
 			} else {
 				# Change skip packages to end packages
-				import_list($file, \%package_end);
+				import_list($file, "end");
 			}
 			last;
 		}
@@ -1030,7 +1033,7 @@ if (! $show_all) {
 	for $file ("$HOME/.debtree/endlist", "/etc/debtree/endlist") {
 		if (-r $file) {
 			info(3, "Using list of 'end' packages from $file");
-			import_list($file, \%package_end);
+			import_list($file, "end");
 			last;
 		}
 	}
