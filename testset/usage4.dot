@@ -31,6 +31,7 @@ digraph "apt" {
 	"pbuilder" [style=filled,fillcolor=azure];
 	"apt-utils" -> "libapt-pkg-libc6.7-6-4.6" [color=blue];
 	"aptitude" -> "libapt-pkg-libc6.7-6-4.6" [color=blue];
+	"libapt-pkg-perl" -> "libapt-pkg-libc6.7-6-4.6" [color=blue];
 	"libept0" -> "libapt-pkg-libc6.7-6-4.6" [color=blue];
 	"python-apt" -> "libapt-pkg-libc6.7-6-4.6" [color=blue];
 	"apt-utils" [style=filled,fillcolor=azure];
@@ -44,6 +45,7 @@ digraph "apt" {
 	"tasksel" [style=filled,fillcolor=azure];
 	"tasksel-data" -> "tasksel" [color=blue];
 	"tasksel-data" [style=filled,fillcolor=azure];
+	"libapt-pkg-perl" [style=filled,fillcolor=azure];
 	"libept0" [style=filled,fillcolor=azure];
 	"aptitude" -> "libept0" [color=blue];
 	"apt" [style="setlinewidth(2),filled",fillcolor=honeydew];
