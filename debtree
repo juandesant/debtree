@@ -200,6 +200,7 @@ sub import_list {
 			}
 		}
 	}
+	close LIST;
 }
 
 sub grep_avail {
