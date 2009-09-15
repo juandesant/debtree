@@ -1,11 +1,10 @@
 digraph "debconf" {
 	node [shape=box];
-	"debconf" -> "perl-base" [color=purple,style=bold,label="(>= 5.6.1-4)"];
-	"perl-base" -> "dpkg" [color=purple,style=bold,label="(>= 1.14.20)"];
 	"debconf" -> "alt1" [color=blue];
 	"alt1":"debconf-i18n" -> "debconf" [color=blue];
 	"alt1":"debconf-i18n" -> "liblocale-gettext-perl" [color=blue];
 	"liblocale-gettext-perl" -> "perl-base" [color=purple,style=bold,label="(>= 5.10.0-9)"];
+	"perl-base" -> "dpkg" [color=purple,style=bold,label="(>= 1.14.20)"];
 	"liblocale-gettext-perl" -> "perlapi-5.10.0" [color=purple,style=bold];
 	"perlapi-5.10.0" -> "perl-base" [dir=back,arrowtail=inv,color=green];
 	"perlapi-5.10.0" [shape=octagon];
@@ -20,6 +19,7 @@ digraph "debconf" {
 	"alt1":"debconf-i18n" -> "alt1":"debconf-english" [color=red];
 	"alt1":"debconf-english" -> "debconf" [color=blue];
 	"alt1":"debconf-english" -> "alt1":"debconf-i18n" [color=red];
+	"debconf" -> "perl-base" [color=purple,style=bold,label="(>= 5.6.1-4)"];
 	"debconf" -> "apt-utils" [label="(>= 0.5.1)"];
 	"apt-utils" -> "libapt-pkg-libc6.7-6-4.6" [color=blue];
 	"libapt-pkg-libc6.7-6-4.6" -> "apt" [dir=back,arrowtail=inv,color=green];

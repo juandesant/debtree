@@ -30,13 +30,13 @@ digraph "debian-installer" {
 	"libxslt1.1" -> "libgcrypt11" [color=blue,label="(>= 1.4.0)"];
 	"libxslt1.1" -> "libxml2" [color=blue,label="(>= 2.6.27)"];
 	"debian-installer" -> "docbook-xml" [color=darkgoldenrod,style=bold];
-	"docbook-xml" -> "xml-core" [color=purple,style=bold,label="(>= 0.12)"];
 	"docbook-xml" -> "sgml-data" [color=blue,label="(>= 2.0.2)"];
 	"sgml-data" -> "perl" [color=blue];
 	"sgml-data" -> "xml-core" [color=blue,label="(>= 0.05)"];
 	"sgml-data" -> "sgml-base" [color=blue,label="(>= 1.17)"];
 	"sgml-base" -> "perl" [color=blue];
 	"docbook-xml" -> "sgml-base" [color=blue,label="(>= 1.17)"];
+	"docbook-xml" -> "xml-core" [color=purple,style=bold,label="(>= 0.12)"];
 	"debian-installer" -> "docbook-xsl" [color=darkgoldenrod,style=bold];
 	"docbook-xsl" -> "xml-core" [color=blue,label="(>= 0.12)"];
 	"debian-installer" -> "libbogl-dev" [color=darkgoldenrod,style=bold];

@@ -10,10 +10,10 @@ digraph "whiptail" {
 	"libpopt0" -> "popt" [color=red];
 	"whiptail" -> "libslang2" [color=blue,label="(>= 2.0.7-1)"];
 	"whiptail" -> "whiptail-provider" [color=red];
-	"whiptail-provider" -> "whiptail" [dir=back,arrowtail=inv,color=green];
-	"whiptail-provider" [shape=octagon];
 	"whiptail-utf8" -> "whiptail" [dir=back,arrowtail=inv,color=green];
 	"whiptail-utf8" [shape=octagon];
+	"whiptail-provider" -> "whiptail" [dir=back,arrowtail=inv,color=green];
+	"whiptail-provider" [shape=octagon];
 	"pds1" -> "whiptail" [style=dotted,label="(1)"];
 	"pds1" -> "dialog" [style=dotted,label="(2)"];
 	"pds1" [shape=circle,label=or];

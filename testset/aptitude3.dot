@@ -21,6 +21,8 @@ digraph "aptitude" {
 	"aptitude" -> "libncursesw5" [color=blue];
 	"aptitude" -> "libsigc++-2.0-0c2a" [color=blue];
 	"aptitude" -> "libxapian15" [color=blue];
+	"aptitude" -> "tasksel" [style=dotted];
+	"aptitude" -> "debtags" [style=dotted];
 	"aptitude" -> "aptitude-doc-en";
 	"aptitude-doc-en" -> "aptitude" [style=dotted];
 	"aptitude" -> "libparse-debianchangelog-perl";
@@ -102,6 +104,7 @@ digraph "aptitude" {
 	"ifupdown" -> "iproute" [style=dotted];
 	"ifupdown" -> "dhcp3-client" [style=dotted];
 	"ifupdown" -> "ppp" [style=dotted];
+	"libwww-perl" -> "libio-socket-ssl-perl" [style=dotted];
 	"libwww-perl" -> "libmailtools-perl";
 	"libmailtools-perl" -> "perl" [color=blue];
 	"libmailtools-perl" -> "libnet-perl" [color=blue];
@@ -125,7 +128,6 @@ digraph "aptitude" {
 	"libcompress-zlib-perl" -> "libio-compress-zlib-perl" [color=blue];
 	"libcompress-zlib-perl" -> "libio-compress-base-perl" [color=blue];
 	"libcompress-zlib-perl" -> "libio-compress-base-perl" [color=blue];
-	"libwww-perl" -> "libio-socket-ssl-perl" [style=dotted];
 	"libxml-parser-perl" -> "libexpat1" [color=blue];
 	"libxml-sax-expat-perl" -> "libxml-sax-perl" [color=blue];
 	"libxml-simple-perl" -> "libxml-libxml-perl" [color=blue];
@@ -139,8 +141,6 @@ digraph "aptitude" {
 	"libxml-libxml-perl" -> "libxml-namespacesupport-perl" [color=blue];
 	"libxml-libxml-perl" -> "libxml-sax-perl" [color=blue];
 	"libxml-libxml-perl" -> "libxml2" [color=blue];
-	"aptitude" -> "tasksel" [style=dotted];
-	"aptitude" -> "debtags" [style=dotted];
 	"aptitude" [style="setlinewidth(2)"]
 	"libsigc++-1.9-0" [style=filled,fillcolor=oldlace];
 	"libsigc++-2.0-0" [style=filled,fillcolor=oldlace];

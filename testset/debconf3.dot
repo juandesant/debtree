@@ -1,13 +1,12 @@
 digraph "debconf" {
 	rankdir=LR;
 	node [shape=box];
-	"debconf" -> "perl-base" [color=purple,style=bold];
-	"perl-base" -> "dpkg" [color=purple,style=bold];
-	"perl-base" -> "perl" [style=dotted];
 	"debconf" -> "debconf-i18n" [color=blue];
 	"debconf-i18n" -> "debconf" [color=blue];
 	"debconf-i18n" -> "liblocale-gettext-perl" [color=blue];
 	"liblocale-gettext-perl" -> "perl-base" [color=purple,style=bold];
+	"perl-base" -> "dpkg" [color=purple,style=bold];
+	"perl-base" -> "perl" [style=dotted];
 	"liblocale-gettext-perl" -> "perlapi-5.10.0" [color=purple,style=bold];
 	"perlapi-5.10.0" -> "perl-base" [dir=back,arrowtail=inv,color=green];
 	"perlapi-5.10.0" [shape=octagon];
@@ -20,11 +19,7 @@ digraph "debconf" {
 	"libtext-charwidth-perl" -> "perlapi-5.10.0" [color=blue];
 	"debconf-i18n" -> "libtext-charwidth-perl" [color=blue];
 	"debconf-i18n" -> "debconf-english" [color=red];
-	"debconf" -> "apt-utils";
-	"apt-utils" -> "libapt-pkg-libc6.7-6-4.6" [color=blue];
-	"libapt-pkg-libc6.7-6-4.6" -> "apt" [dir=back,arrowtail=inv,color=green];
-	"libapt-pkg-libc6.7-6-4.6" [shape=octagon];
-	"apt-utils" -> "libdb4.6" [color=blue];
+	"debconf" -> "perl-base" [color=purple,style=bold];
 	"debconf" -> "debconf-doc" [style=dotted];
 	"debconf" -> "debconf-utils" [style=dotted];
 	"debconf" -> "whiptail" [style=dotted];
@@ -33,6 +28,11 @@ digraph "debconf" {
 	"debconf" -> "libqt-perl" [style=dotted];
 	"debconf" -> "libnet-ldap-perl" [style=dotted];
 	"debconf" -> "perl" [style=dotted];
+	"debconf" -> "apt-utils";
+	"apt-utils" -> "libapt-pkg-libc6.7-6-4.6" [color=blue];
+	"libapt-pkg-libc6.7-6-4.6" -> "apt" [dir=back,arrowtail=inv,color=green];
+	"libapt-pkg-libc6.7-6-4.6" [shape=octagon];
+	"apt-utils" -> "libdb4.6" [color=blue];
 	"debconf" -> "debconf-tiny" [color=red];
 	"debconf" -> "debconf-2.0" [arrowhead=inv,color=green];
 	"debconf-2.0" -> virt1 [dir=back,arrowtail=inv,color=green];

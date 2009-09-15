@@ -52,10 +52,10 @@ digraph "clamav" {
 	"alt1":"clamav-freshclam" -> "libclamav3" [color=red];
 	"alt1":"clamav-data" -> "alt2":"debconf" [color=blue,label="(>= 0.5)"];
 	"alt1":"clamav-data" -> "alt1":"clamav-freshclam" [color=red];
-	"clamav" -> "clamav-base";
 	"clamav" -> "unrar" [style=dotted,label="(>= 3.0-1)"];
 	"clamav" -> "lha" [style=dotted];
 	"clamav" -> "clamav-docs" [style=dotted];
+	"clamav" -> "clamav-base";
 	"clamav" [style="setlinewidth(2)"]
 	"libclamav3" [style=filled,fillcolor=oldlace];
 	"libgmp3" [style=filled,fillcolor=oldlace];
