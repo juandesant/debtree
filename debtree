@@ -1074,7 +1074,7 @@ if (keys(%package_skipped)) {
 	}
 		
 	info(1, "The following dependencies have been excluded from the graph (skipped):");
-	info(1, @plist);
+	info(1, "@plist");
 	# Also list excluded packages as comments in the output
 	print("// Excluded dependencies:\n");
 	print("// @plist\n");
