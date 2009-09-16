@@ -1080,31 +1080,24 @@ sub process_package {
 		delete $pstatus{$package}{ended};
 	}
 
-	if ($ptype eq "S") {
-		$p_apt = apt_pinfo($package, $ptype);
-		if (! $p_apt) {
+	$p_apt = apt_pinfo($package, $ptype);
+	if ($ptype eq "S" || $ptype eq "B") {
+		if ($p_apt) { 
+			print_dot_header();
+		} else {
 			error("no dependency info found for '$package'");
 		}
-	} else {
-		$p_apt = apt_pinfo($package, $ptype);
-		if (! $p_apt) {
-			if ($ptype eq "B") {
-				error("no dependency info found for '$package'");
-			}
-			my @providers = get_providers($package);
-			if (@providers) {
-				# For leaf packages we need to check if it was an alternative
-				$prevdep_OR_name = get_prior_OR_dep($package) if ($ptype eq "L");
-
-				process_virtual($level, $package, $prevdep_OR_name, $ptype, @providers);
-			} else {
-				process_missing($package);
-			}
-		}
 	}
+	if (! $p_apt) {
+		my @providers = get_providers($package);
+		if (@providers) {
+			# For leaf packages we need to check if it was an alternative
+			$prevdep_OR_name = get_prior_OR_dep($package) if ($ptype eq "L");
 
-	if ($ptype eq "B" || $ptype eq "S") {
-		print_dot_header();
+			process_virtual($level, $package, $prevdep_OR_name, $ptype, @providers);
+		} else {
+			process_missing($package);
+		}
 	}
 
 	return if ($ptype eq "L" || $ptype eq "V");
