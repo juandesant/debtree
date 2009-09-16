@@ -853,16 +853,26 @@ sub pre_process_bdeps {
 	my $deps = "";
 
 	# FIXME: AptPkg does not seem to have architecture conditions!
-	for my $type (keys %{ $$p_apt{BuildDepends} }) {
-		for my $dep (@{ $$p_apt{BuildDepends}{$type} }) {
-			if ($deps) {
-				$deps .= ",";
-			}
-			$deps .= @$dep[0];
-			if (@$dep[1]) {
-				$deps .= " (@$dep[1] @$dep[2])"
-			}
-		}
+	#for my $type (keys %{ $$p_apt{BuildDepends} }) {
+	#	for my $dep (@{ $$p_apt{BuildDepends}{$type} }) {
+	#		if ($deps) {
+	#			$deps .= ",";
+	#		}
+	#		$deps .= @$dep[0];
+	#		if (@$dep[1]) {
+	#			$deps .= " (@$dep[1] @$dep[2])"
+	#		}
+	#	}
+	#	process_deps($level, $package, $deps, short_type($type), "");
+	#}
+
+	# Therefore, use the old call-out to apt-cache
+	for my $type (qw/Build-Depends Build-Depends-Indep/) {
+		$deps = `apt-cache showsrc $package | grep -E "^$type:"`;
+		chomp $deps;
+		$deps =~ s/^$type: //;
+		$deps =~ s/, /,/g;
+		$deps =~ s/ \| /|/g;
 		process_deps($level, $package, $deps, short_type($type), "");
 	}
 }

@@ -21,7 +21,7 @@ digraph "dpkg" {
 	"dpkg" -> "flex" [color=darkgoldenrod,style=bold];
 	"flex" -> "m4" [color=blue];
 	"flex" -> "debconf" [color=purple,style=bold];
-	"dpkg" -> "libselinux1-dev" [color=darkgoldenrod,style=bold,label="(>= 1.28-4)"];
+	"dpkg" -> "libselinux1-dev" [color=darkgoldenrod,style=bold,label="(>= 1.28-4)\n[!hurd-i386 !kfreebsd-i386 !kfreebsd-amd64]"];
 	"libselinux1-dev" -> "libselinux1" [color=blue,label="(= 2.0.65-5)"];
 	"libselinux1-dev" -> "libsepol1-dev" [color=blue,label="(>= 1.12)"];
 	"libsepol1-dev" -> "libsepol1" [color=blue,label="(= 2.0.30-2)"];
