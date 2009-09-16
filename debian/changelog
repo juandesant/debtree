@@ -4,10 +4,7 @@ debtree (0.9.9) UNRELEASED; urgency=low
     to dctrl-tools, except for getting build dependencies as libapt-pkg-perl
     does not expose architecture conditions (#546863).
 
- -- Frans Pop <fjp@debian.org>  Wed, 16 Sep 2009 13:13:25 +0200
-
-debtree (0.9.0) UNRELEASED; urgency=low
-
+  [ Changes in unofficial release 0.9.0 - Mon, 14 Sep 2009 19:56:12 +0200 ]
   * Remove support for printing dependency paths. It only duplicates
     functionality offered better by 'aptitude why'.
   * First stage of conversion to perl. Script is now written in perl, but
@@ -84,4 +81,4 @@ debtree (0.9.0) UNRELEASED; urgency=low
   [ Changes in unofficial release 0.5.0 - Fri, 28 Sep 2007 06:28:30 +0200 ]
   * Initial unofficial release.
 
- -- Frans Pop <fjp@debian.org>  Mon, 14 Sep 2009 19:56:12 +0200
+ -- Frans Pop <fjp@debian.org>  Wed, 16 Sep 2009 13:35:58 +0200
