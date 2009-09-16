@@ -1,3 +1,9 @@
+debtree (1.0) UNRELEASED; urgency=low
+
+  * Change packaging to use the magic 'dh' command.
+
+ -- Frans Pop <fjp@debian.org>  Wed, 16 Sep 2009 13:45:19 +0200
+
 debtree (0.9.9) UNRELEASED; urgency=low
 
   * Complete conversion to perl by using libapt-pkg-perl instead of call-outs

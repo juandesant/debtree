@@ -2,7 +2,7 @@ Source: debtree
 Section: utils
 Priority: optional
 Maintainer: Frans Pop <fjp@debian.org>
-Build-Depends: debhelper (>= 5)
+Build-Depends: debhelper (>= 7)
 Standards-Version: 3.8.3
 Homepage: http://alioth.debian.org/~fjp/debtree/
 Vcs-Git: git://git.debian.org/collab-maint/debtree.git
