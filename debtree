@@ -142,6 +142,15 @@ error("invalid value for option 'max-depth'") if ($max_depth < 0);
 error("invalid value for option 'rdeps-depth'") if ($show_rdeps && $rdeps_depth < 1);
 error("invalid value for option 'max-rdeps'") if ($max_rdeps < 1);
 
+# The dependency types to display in the graph
+my @dtypes = qw/PreDepends Depends/;
+push(@dtypes, "Recommends") if $with_recommends;
+push(@dtypes, "Suggests") if $with_suggests;
+push(@dtypes, "Conflicts") if $with_conflicts;
+# Same for reverse dependencies
+my @rdtypes = qw/PreDepends Depends/;
+push(@rdtypes, "Recommends") if $with_recommends;
+
 # ToDo: use configurable colors for everything?
 my $rdep_color;
 if ($show_installed) {
@@ -317,7 +326,7 @@ sub check_version {
 }
 
 sub get_rdeps {
-	my ($package, $parent, @types) = @_;
+	my ($package, $parent) = @_;
 	my %rdeps;
 
 	my $p_apt = $cache->get($package);
@@ -327,7 +336,7 @@ sub get_rdeps {
 		my $pname = $$rdep{ParentPkg}{Name};
 		my $type = $$rdep{DepType};
 
-		next unless grep(/^$type$/, @types);
+		next unless grep(/^$type$/, @rdtypes);
 		next if ($parent && $pname eq $parent);
 		next unless check_version($pname, $$rdep{ParentVer}{VerStr});
 		next unless (! $show_installed || is_installed($pname));
@@ -817,7 +826,6 @@ sub pre_process_deps {
 	my $package = shift;
 	my $prevdep_OR_name = shift;
 	my $p_apt = shift;
-	my @types = @_;
 
 	my $type = "";
 	my $delim = "";
@@ -832,7 +840,7 @@ sub pre_process_deps {
 			}
 			$type = $$dep{DepType};
 		}
-		next unless grep(/^$type$/, @types);
+		next unless grep(/^$type$/, @dtypes);
 		if ($deps) {
 			$deps .= $delim;
 		}
@@ -1009,9 +1017,7 @@ sub find_rdeps {
 	$pstatus{$package}{rdep} = 1;
 
 	my @recurse_rdeps;
-	my @types = qw/PreDepends Depends/;
-	push(@types, "Recommends") if $with_recommends;
-	my %rdeps = get_rdeps($package, $parent, @types);
+	my %rdeps = get_rdeps($package, $parent);
 	for my $type (sort keys %rdeps) {
 		my $stype = short_type($type);
 		my @rdeps = @{ $rdeps{$type} };
@@ -1109,11 +1115,7 @@ sub process_package {
 		if ($ptype eq "S") {
 			pre_process_bdeps($level, $package, $p_apt);
 		} else {
-			my @types = qw/PreDepends Depends/;
-			push(@types, "Recommends") if $with_recommends;
-			push(@types, "Suggests") if $with_suggests;
-			push(@types, "Conflicts") if $with_conflicts;
-			pre_process_deps($level, $package, $prevdep_OR_name, $p_apt, @types);
+			pre_process_deps($level, $package, $prevdep_OR_name, $p_apt);
 		}
 	}
 
