@@ -57,17 +57,17 @@ digraph "pidentd" {
 	virt1 [
 		shape = "record"
 		style = "rounded"
-		label = "<cdebconf> \{cdebconf\} | <debconf> [debconf]"
+		label = "<debconf> [debconf] | <cdebconf> \{cdebconf\}"
 	]
 	virt2 [
 		shape = "record"
 		style = "rounded"
-		label = "<inetutils-inetd> \{inetutils-inetd\} | <openbsd-inetd> [openbsd-inetd] | <rlinetd> \{rlinetd\} | <xinetd> \{xinetd\}"
+		label = "<xinetd> \{xinetd\} | <rlinetd> \{rlinetd\} | <openbsd-inetd> [openbsd-inetd] | <inetutils-inetd> \{inetutils-inetd\}"
 	]
 	virt3 [
 		shape = "record"
 		style = "rounded"
-		label = "<inetutils-inetd> \{inetutils-inetd\} | <openbsd-inetd> [openbsd-inetd]"
+		label = "<openbsd-inetd> [openbsd-inetd] | <inetutils-inetd> \{inetutils-inetd\}"
 	]
 	"dpkg" [shape=diamond];
 	"passwd" [shape=diamond];

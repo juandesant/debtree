@@ -38,7 +38,7 @@ digraph "debconf" {
 	virt1 [
 		shape = "record"
 		style = "rounded"
-		label = "<cdebconf> \{cdebconf\} | <debconf> [debconf]"
+		label = "<debconf> [debconf] | <cdebconf> \{cdebconf\}"
 	]
 	"apt" [shape=diamond];
 	"dpkg" [shape=diamond];

@@ -262,14 +262,6 @@ sub grep_source {
 	return $pinfo;
 }
 
-sub get_providers {
-	my $package = shift;
-	my $pinfo = `grep-aptavail -n -s Package -F Provides --eregex "(^| )$package(,|\$)"`;
-	return unless $pinfo;
-	chomp $pinfo;
-	return split(/\n/, $pinfo);
-}
-
 sub get_deps {
 	my ($pinfo, $type) = @_;
 	my ($dep) = $pinfo =~ /^$type: (.*)/m;
@@ -357,6 +349,21 @@ sub get_rdeps {
 	}
 
 	return %rdeps;
+}
+
+sub get_providers {
+	my $package = shift;
+	my @providers;
+
+	my $p_apt = $cache->get($package);
+	return unless $p_apt && exists $$p_apt{ProvidesList};
+
+	for my $provider (@{ $$p_apt{ProvidesList} }) {
+		my $pname = $$provider{OwnerPkg}{Name};
+		next unless check_version($pname, $$provider{OwnerVer}{VerStr});
+		push(@providers, $pname);
+	}
+	return @providers;
 }
 
 # For build dependencies, check if there are architecture conditions.
