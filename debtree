@@ -9,13 +9,10 @@
 
 # Usage: debtree [options] <package name>
 
-# In first case the script produces a dot file for processing with 'dot'.
+# The script produces a dot file for processing with 'dot'.
 # Examples: debtree <package> > <package>.dot
 #           debtree <package> | dot -Tpng -o <package>.png
 #           debtree <package> | dot -Tps | kghostview -
-#
-# In second case it will list the dependency path(s) from the first
-# to the second package.
 
 sub usage {
   warn join(" ", @_)."\n" if @_;
