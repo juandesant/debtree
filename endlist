@@ -123,6 +123,7 @@ libgnomeui-0
 libgnomevfs2-0
 libgtk2.0-0
 gconf2
+gksu
 
 # Tex
 tex-common
