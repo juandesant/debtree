@@ -260,31 +260,31 @@ sub import_list {
 	close LIST;
 }
 
-sub apt_pinfo {
+sub get_apt_pinfo {
 	my ($package, $type) = @_;
 
 	if ($type eq "S") {
-		my $p_apt = $source->get($package);
-		return unless $p_apt;
-		return pop(@$p_apt);
+		my $pinfo = $source->get($package);
+		return unless $pinfo;
+		return pop(@$pinfo);
 	} else {
-		my $p_apt = $cache->get($package);
-		return unless $p_apt;
-		if (exists $$p_apt{CurrentVer}) {
-			return $$p_apt{CurrentVer};
-		} elsif (exists $$p_apt{VersionList}) {
-			return pop(@{ $$p_apt{VersionList} });
+		my $pinfo = $cache->get($package);
+		return unless $pinfo;
+		if (exists $$pinfo{CurrentVer}) {
+			return $$pinfo{CurrentVer};
+		} elsif (exists $$pinfo{VersionList}) {
+			return pop(@{ $$pinfo{VersionList} });
 		}
 	}
 }
 
 sub get_apt_deps {
-	my ($p_apt, $type) = @_;
+	my ($pinfo, $type) = @_;
 	my $delim="";
 	my $deps = "";
 
-	return "" unless $p_apt;
-	for my $dep (@{ $$p_apt{DependsList} }) {
+	return "" unless $pinfo;
+	for my $dep (@{ $$pinfo{DependsList} }) {
 		next if ($$dep{DepType} ne $type);
 		if ($deps) {
 			$deps .= $delim;
@@ -302,15 +302,15 @@ sub get_apt_deps {
 sub is_installed {
 	my $package = shift;
 
-	my $p_apt = $cache->get($package);
-	return ($p_apt && $$p_apt{CurrentState} eq "Installed");
+	my $pinfo = $cache->get($package);
+	return ($pinfo && $$pinfo{CurrentState} eq "Installed");
 }
 
 sub get_provides {
-	my $p_apt = shift;
+	my $pinfo = shift;
 
-	return unless exists $$p_apt{ProvidesList};
-	my @pset = map($_->{Name}, @{ $$p_apt{ProvidesList} });
+	return unless exists $$pinfo{ProvidesList};
+	my @pset = map($_->{Name}, @{ $$pinfo{ProvidesList} });
 	return @pset if @pset;
 }
 
@@ -318,18 +318,18 @@ sub get_provides {
 # be selected for the rest of the graph.
 sub check_version {
 	my ($package, $version) = @_;
-	my $p_apt = apt_pinfo($package, "");
-	return ($$p_apt{VerStr} eq $version);
+	my $pinfo = get_apt_pinfo($package, "");
+	return ($$pinfo{VerStr} eq $version);
 }
 
 sub get_rdeps {
 	my ($package, $parent) = @_;
 	my %rdeps;
 
-	my $p_apt = $cache->get($package);
-	return unless ($p_apt && exists $$p_apt{RevDependsList});
+	my $pinfo = $cache->get($package);
+	return unless ($pinfo && exists $$pinfo{RevDependsList});
 
-	for my $rdep (@{ $$p_apt{RevDependsList} }) {
+	for my $rdep (@{ $$pinfo{RevDependsList} }) {
 		my $pname = $$rdep{ParentPkg}{Name};
 		my $type = $$rdep{DepType};
 
@@ -352,10 +352,10 @@ sub get_providers {
 	my $package = shift;
 	my @providers;
 
-	my $p_apt = $cache->get($package);
-	return unless $p_apt && exists $$p_apt{ProvidesList};
+	my $pinfo = $cache->get($package);
+	return unless $pinfo && exists $$pinfo{ProvidesList};
 
-	for my $provider (@{ $$p_apt{ProvidesList} }) {
+	for my $provider (@{ $$pinfo{ProvidesList} }) {
 		my $pname = $$provider{OwnerPkg}{Name};
 		next unless check_version($pname, $$provider{OwnerVer}{VerStr});
 		push(@providers, $pname);
@@ -639,8 +639,8 @@ sub print_rdeps_provides {
 	$pstatus{$rdep}{prov_rdeps} = 1;
 
 	my $regex = join("|", @pset);
-	my $p_apt = apt_pinfo($rdep, "");
-	my $deps = get_apt_deps($p_apt, full_type($type));
+	my $pinfo = get_apt_pinfo($rdep, "");
+	my $deps = get_apt_deps($pinfo, full_type($type));
 	for my $dep_or (split(/,/, $deps)) {
 		next unless $dep_or =~ /(^|\|)($regex)([| ]|$)/;
 
@@ -822,14 +822,14 @@ sub pre_process_deps {
 	my $level = shift;
 	my $package = shift;
 	my $prevdep_OR_name = shift;
-	my $p_apt = shift;
+	my $pinfo = shift;
 
 	my $type = "";
 	my $delim = "";
 	my $deps = "";
 
-	return unless exists $$p_apt{DependsList};
-	for my $dep (@{ $$p_apt{DependsList} }) {
+	return unless exists $$pinfo{DependsList};
+	for my $dep (@{ $$pinfo{DependsList} }) {
 		if ($$dep{DepType} ne $type) {
 			if ($deps) {
 				process_deps($level, $package, $deps, short_type($type), $prevdep_OR_name);
@@ -855,12 +855,12 @@ sub pre_process_deps {
 }
 
 sub pre_process_bdeps {
-	my ($level, $package, $p_apt) = @_;
+	my ($level, $package, $pinfo) = @_;
 	my $deps = "";
 
 	# FIXME: AptPkg does not seem to have architecture conditions!
-	#for my $type (keys %{ $$p_apt{BuildDepends} }) {
-	#	for my $dep (@{ $$p_apt{BuildDepends}{$type} }) {
+	#for my $type (keys %{ $$pinfo{BuildDepends} }) {
+	#	for my $dep (@{ $$pinfo{BuildDepends}{$type} }) {
 	#		if ($deps) {
 	#			$deps .= ",";
 	#		}
@@ -1075,7 +1075,7 @@ sub process_package {
 	my $package = shift;
 	my $prevdep_OR_name = shift;
 	my $ptype = shift;
-	my $p_apt;
+	my $pinfo;
 
 	info(2, "Level $level: processing $package" . ($ptype ? " ($ptype)" : ""));
 
@@ -1084,15 +1084,15 @@ sub process_package {
 		delete $pstatus{$package}{ended};
 	}
 
-	$p_apt = apt_pinfo($package, $ptype);
+	$pinfo = get_apt_pinfo($package, $ptype);
 	if ($ptype eq "S" || $ptype eq "B") {
-		if ($p_apt) { 
+		if ($pinfo) { 
 			print_dot_header();
 		} else {
 			error("no dependency info found for '$package'");
 		}
 	}
-	if (! $p_apt) {
+	if (! $pinfo) {
 		my @providers = get_providers($package);
 		if (@providers) {
 			# For leaf packages we need to check if it was an alternative
@@ -1109,17 +1109,17 @@ sub process_package {
 	# Mark as done now to prevent recursion loops
 	$pstatus{$package}{done} = 1;
 
-	if ($p_apt) {
+	if ($pinfo) {
 		if ($ptype eq "S") {
-			pre_process_bdeps($level, $package, $p_apt);
+			pre_process_bdeps($level, $package, $pinfo);
 		} else {
-			pre_process_deps($level, $package, $prevdep_OR_name, $p_apt);
+			pre_process_deps($level, $package, $prevdep_OR_name, $pinfo);
 		}
 	}
 
 	# Provides and reverse dependencies for the requested package
 	if ($level == 1 && ($with_provides || $show_rdeps)) {
-		my @provides = get_provides($p_apt);
+		my @provides = get_provides($pinfo);
 		if (! $with_provides || ! @provides) {
 			if ($show_rdeps) {
 				debug(4, "Find rdeps for the package");
