@@ -57,9 +57,7 @@ my $no_skip = 0;
 my $show_all = 0;
 my $do_rotate = 0;
 my $do_condense = 0;
-
-my $ARCH=`dpkg --print-architecture`;
-chomp $ARCH;
+my $ARCH="";
 
 # Hash containing skip and end packages read from config files
 my %clist;
@@ -180,8 +178,9 @@ my $source;
 # into account when determining which dependencies to return. So we can
 # use AptPkg to show build dependencies for a specific architecture, but
 # not when ARCH=all. For that case we call out to apt-cache instead.
+# AptPkg defaults to the host system's architecture.
 if ($build_dep && $ARCH ne "all") {
-	$_config->{"APT::Architecture"} = $ARCH;
+	$_config->{"APT::Architecture"} = $ARCH if $ARCH;
 	$source = AptPkg::Source->new();
 }
 
