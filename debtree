@@ -128,7 +128,6 @@ if ($build_dep) {
 	$ptype = "B";
 }
 error("invalid value for option 'arch'") if ($ARCH && ! grep (/^$ARCH$/, @ARCHES));
-$ARCH = "" if ($ARCH eq "all");
 
 # These options are overlapping
 $rdeps_depth = 1 if ($show_rdeps && $rdeps_depth == 0);
@@ -177,7 +176,12 @@ if ($verbose) {
 # Create instances to search for Depends and, if needed, Build-Depends
 my $cache = AptPkg::Cache->new();
 my $source;
-if ($build_dep) {
+# AptPkg does not expose architecture conditions, but it does take them
+# into account when determining which dependencies to return. So we can
+# use AptPkg to show build dependencies for a specific architecture, but
+# not when ARCH=all. For that case we call out to apt-cache instead.
+if ($build_dep && $ARCH ne "all") {
+	$_config->{"APT::Architecture"} = $ARCH;
 	$source = AptPkg::Source->new();
 }
 
@@ -258,6 +262,16 @@ sub import_list {
 		}
 	}
 	close LIST;
+}
+
+sub get_bdeps_all {
+	my $package = shift;
+
+	my $pinfo = `apt-cache showsrc $package | grep -E "^Build-Depends(-Indep)?:"`;
+	chomp $pinfo;
+	$pinfo =~ s/, /,/g;
+	$pinfo =~ s/ \| /|/g;
+	return $pinfo;
 }
 
 sub get_apt_pinfo {
@@ -361,40 +375,6 @@ sub get_providers {
 		push(@providers, $pname);
 	}
 	return @providers;
-}
-
-# For build dependencies, check if there are architecture conditions.
-# Any versioned dependency is returned.
-# The check is done only if an architecture is specified; if not, the arch
-# condition is also returned and displayed in the graph.
-sub check_arch {
-	my ($dep_type, $verdep) = @_;
-	my ($valid, $resdep);
-
-	$verdep =~ s/^[^ ]+ ?//; # remove package name
-	if (($dep_type ne "B" && $dep_type ne "BI") || ! $ARCH) {
-		# Return full dependency
-		$resdep = $verdep;
-		$valid = 1;
-	} else {
-		# Only return versioned dependency
-		$resdep = $verdep;
-		$resdep =~ s/ *\[.*//;
-
-		my ($arch_cond) = $verdep =~ /(\[.*\])/;
-		if (! $arch_cond) {
-			$valid = 1;	# no arch condition
-		} elsif ($arch_cond =~ /!$ARCH[] ]/) {
-			$valid = 0;	# arch excluded
-		} elsif ($arch_cond =~ /!/) {
-			$valid = 1;	# there are exclusions (not including arch)
-		} elsif ($arch_cond =~ /[[ ]$ARCH[] ]/) {
-			$valid = 1;	# arch included
-		} else {
-			$valid = 0;	# arch not included
-		}
-	}
-	return ($valid, $resdep);
 }
 
 sub set_name {
@@ -770,13 +750,8 @@ sub process_deps {
 				next;
 			}
 
-			# Check for arch-conditioned build-dependencies
-			# Note: for build dependencies pkgdep can include arch-conditions
-			my ($arch_valid, $pkgdep) = check_arch($dep_type, $dep_or);
-			if (! $arch_valid) {
-				info(1, "Build dependency ($dep_type) on '$dep_package' not for $ARCH");
-				next;
-			}
+			# Note: for build dependencies pkgdep can include architecture conditions
+			my ($pkgdep) = $dep_or =~ m/ (.*)/;
 
 			if (exists $clist{$dep_package}{skip}) {
 				$pstatus{$dep_package}{skipped} = 1;
@@ -856,30 +831,30 @@ sub pre_process_deps {
 
 sub pre_process_bdeps {
 	my ($level, $package, $pinfo) = @_;
-	my $deps = "";
 
-	# FIXME: AptPkg does not seem to have architecture conditions!
-	#for my $type (keys %{ $$pinfo{BuildDepends} }) {
-	#	for my $dep (@{ $$pinfo{BuildDepends}{$type} }) {
-	#		if ($deps) {
-	#			$deps .= ",";
-	#		}
-	#		$deps .= @$dep[0];
-	#		if (@$dep[1]) {
-	#			$deps .= " (@$dep[1] @$dep[2])"
-	#		}
-	#	}
-	#	process_deps($level, $package, $deps, short_type($type), "");
-	#}
-
-	# Therefore, use the old call-out to apt-cache
-	for my $type (qw/Build-Depends Build-Depends-Indep/) {
-		$deps = `apt-cache showsrc $package | grep -E "^$type:"`;
-		chomp $deps;
-		$deps =~ s/^$type: //;
-		$deps =~ s/, /,/g;
-		$deps =~ s/ \| /|/g;
-		process_deps($level, $package, $deps, short_type($type), "");
+	if ($ARCH eq "all") {
+		# $pinfo contains output from apt-cache (see get_bdeps_all)
+		for my $type (qw/Build-Depends Build-Depends-Indep/) {
+			my ($deps) = $pinfo =~ /^$type: (.*)/;
+			next unless $deps;
+			process_deps($level, $package, $deps, short_type($type), "");
+		}
+	} else {
+		# $pinfo is a pointer to AptPkg data
+		return unless exists $$pinfo{BuildDepends};
+		for my $type (keys %{ $$pinfo{BuildDepends} }) {
+			my $deps = "";
+			for my $dep (@{ $$pinfo{BuildDepends}{$type} }) {
+				if ($deps) {
+					$deps .= ",";
+				}
+				$deps .= @$dep[0];
+				if (@$dep[1]) {
+					$deps .= " (@$dep[1] @$dep[2])"
+				}
+			}
+			process_deps($level, $package, $deps, short_type($type), "");
+		}
 	}
 }
 
@@ -1084,7 +1059,12 @@ sub process_package {
 		delete $pstatus{$package}{ended};
 	}
 
-	$pinfo = get_apt_pinfo($package, $ptype);
+	if ($ptype eq "S" && $ARCH eq "all") {
+		# AptPkg does not expose architecture conditions, so use apt-cache
+		$pinfo = get_bdeps_all($package);
+	} else {
+		$pinfo = get_apt_pinfo($package, $ptype);
+	}
 	if ($ptype eq "S" || $ptype eq "B") {
 		if ($pinfo) { 
 			print_dot_header();
@@ -1109,6 +1089,7 @@ sub process_package {
 	# Mark as done now to prevent recursion loops
 	$pstatus{$package}{done} = 1;
 
+	# Recurse through dependencies
 	if ($pinfo) {
 		if ($ptype eq "S") {
 			pre_process_bdeps($level, $package, $pinfo);
