@@ -34,7 +34,7 @@ my $HOME;
 ($HOME = $ENV{'HOME'}) or die "HOME not defined in environment!\n";
 
 my @ARCHES = qw/alpha amd64 arm armel hppa i386 ia64 mips mipsel powerpc s390 sparc/;
-push(@ARCHES, qw/m68k ppc64 sh all/);
+push(@ARCHES, qw/hurd-i386 kfreebsd-i386 kfreebsd-amd64 m68k ppc64 sh all/);
 
 my $ptype;
 my $verbose = 0;
