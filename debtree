@@ -220,6 +220,18 @@ sub error {
 
 ### FUNCTIONS ###
 
+# Translates AptPkg's (localized) dependency types to what's used by debtree.
+# This is only needed for regular dependencies, not build dependencies.
+sub get_type {
+	my $type = shift;
+	return "PreDepends" if ($type == AptPkg::Dep::PreDepends);
+	return "Depends" if ($type == AptPkg::Dep::Depends);
+	return "Recommends" if ($type == AptPkg::Dep::Recommends);
+	return "Suggests" if ($type == AptPkg::Dep::Suggests);
+	return "Conflicts" if ($type == AptPkg::Dep::Conflicts);
+	return "Unsupported";
+}
+
 sub full_type {
 	my $type = shift;
 
@@ -298,7 +310,7 @@ sub get_apt_deps {
 
 	return "" unless $pinfo;
 	for my $dep (@{ $$pinfo{DependsList} }) {
-		next if ($$dep{DepType} ne $type);
+		next if (get_type(0 + $$dep{DepType}) ne $type);
 		if ($deps) {
 			$deps .= $delim;
 		}
@@ -344,7 +356,7 @@ sub get_rdeps {
 
 	for my $rdep (@{ $$pinfo{RevDependsList} }) {
 		my $pname = $$rdep{ParentPkg}{Name};
-		my $type = $$rdep{DepType};
+		my $type = get_type(0 + $$rdep{DepType});
 
 		next unless grep(/^$type$/, @rdtypes);
 		next if ($parent && $pname eq $parent);
@@ -804,13 +816,14 @@ sub pre_process_deps {
 
 	return unless exists $$pinfo{DependsList};
 	for my $dep (@{ $$pinfo{DependsList} }) {
-		if ($$dep{DepType} ne $type) {
+		my $new_type = get_type(0 + $$dep{DepType});
+		if ($new_type ne $type) {
 			if ($deps) {
 				process_deps($level, $package, $deps, short_type($type), $prevdep_OR_name);
 				$delim = "";
 				$deps = "";
 			}
-			$type = $$dep{DepType};
+			$type = $new_type;
 		}
 		next unless grep(/^$type$/, @dtypes);
 		if ($deps) {
@@ -822,7 +835,7 @@ sub pre_process_deps {
 		}
 		$delim = ($$dep{CompType} & AptPkg::Dep::Or) ? '|' : ',';
 	}
-	# Ensure the last type also gets processed
+	# Ensure the dependency type encountered last also gets processed
 	if ($deps) {
 		process_deps($level, $package, $deps, short_type($type), $prevdep_OR_name);
 	}
