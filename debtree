@@ -223,43 +223,43 @@ sub error {
 # Translates AptPkg's (localized) dependency types to what's used by debtree.
 # This is only needed for regular dependencies, not build dependencies.
 sub get_type {
-	my $type = shift;
-	return "PreDepends" if ($type == AptPkg::Dep::PreDepends);
-	return "Depends" if ($type == AptPkg::Dep::Depends);
-	return "Recommends" if ($type == AptPkg::Dep::Recommends);
-	return "Suggests" if ($type == AptPkg::Dep::Suggests);
-	return "Conflicts" if ($type == AptPkg::Dep::Conflicts);
+	my $apt_dtype = shift;
+	return "PreDepends" if ($apt_dtype == AptPkg::Dep::PreDepends);
+	return "Depends" if ($apt_dtype == AptPkg::Dep::Depends);
+	return "Recommends" if ($apt_dtype == AptPkg::Dep::Recommends);
+	return "Suggests" if ($apt_dtype == AptPkg::Dep::Suggests);
+	return "Conflicts" if ($apt_dtype == AptPkg::Dep::Conflicts);
 	return "Unsupported";
 }
 
 sub full_type {
-	my $type = shift;
+	my $dtype = shift;
 
-	return "PreDepends" if ($type eq "PD");
-	return "Depends" if ($type eq "D");
-	return "Recommends" if ($type eq "R");
-	return "Suggests" if ($type eq "S");
-	return "Conflicts" if ($type eq "C");
-	return "Build-Depends" if ($type eq "B");
-	return "Build-Depends-Indep" if ($type eq "BI");
-	error("full_type: unrecognized dependency type '$type'");
+	return "PreDepends" if ($dtype eq "PD");
+	return "Depends" if ($dtype eq "D");
+	return "Recommends" if ($dtype eq "R");
+	return "Suggests" if ($dtype eq "S");
+	return "Conflicts" if ($dtype eq "C");
+	return "Build-Depends" if ($dtype eq "B");
+	return "Build-Depends-Indep" if ($dtype eq "BI");
+	error("full_type: unrecognized dependency type '$dtype'");
 }
 
 sub short_type {
-	my $type = shift;
+	my $dtype = shift;
 
-	return "PD" if ($type eq "PreDepends");
-	return "D" if ($type eq "Depends");
-	return "R" if ($type eq "Recommends");
-	return "S" if ($type eq "Suggests");
-	return "C" if ($type eq "Conflicts");
-	return "B" if ($type eq "Build-Depends");
-	return "BI" if ($type eq "Build-Depends-Indep");
-	error("short_type: unrecognized dependency type '$type'");
+	return "PD" if ($dtype eq "PreDepends");
+	return "D" if ($dtype eq "Depends");
+	return "R" if ($dtype eq "Recommends");
+	return "S" if ($dtype eq "Suggests");
+	return "C" if ($dtype eq "Conflicts");
+	return "B" if ($dtype eq "Build-Depends");
+	return "BI" if ($dtype eq "Build-Depends-Indep");
+	error("short_type: unrecognized dependency type '$dtype'");
 }
 
 sub import_list {
-	my ($file, $type) = @_;
+	my ($file, $ltype) = @_;
 
 	if (open LIST, "<$file") {
 		while (<LIST>) {
@@ -268,7 +268,7 @@ sub import_list {
 			$line =~ s/\s+$// if $line;
 			next unless $line;
 			for my $package (split(/ +/, $line)) {
-				$clist{$package}{$type} = 1;
+				$clist{$package}{$ltype} = 1;
 			}
 		}
 	}
@@ -286,9 +286,9 @@ sub get_bdeps_all {
 }
 
 sub get_apt_pinfo {
-	my ($package, $type) = @_;
+	my ($package, $ptype) = @_;
 
-	if ($type eq "S") {
+	if ($ptype eq "S") {
 		my $pinfo = $source->get($package);
 		return unless $pinfo;
 		return pop(@$pinfo);
@@ -304,13 +304,13 @@ sub get_apt_pinfo {
 }
 
 sub get_apt_deps {
-	my ($pinfo, $type) = @_;
+	my ($pinfo, $dtype) = @_;
 	my $delim="";
 	my $deps = "";
 
 	return "" unless $pinfo;
 	for my $dep (@{ $$pinfo{DependsList} }) {
-		next if (get_type(0 + $$dep{DepType}) ne $type);
+		next if (get_type(0 + $$dep{DepType}) ne $dtype);
 		if ($deps) {
 			$deps .= $delim;
 		}
@@ -320,7 +320,7 @@ sub get_apt_deps {
 		}
 		$delim = ($$dep{CompType} & AptPkg::Dep::Or) ? '|' : ',';
 	}
-	#debug(0, "$type --- $deps");
+	#debug(0, "$dtype --- $deps");
 	return $deps;
 }
 
@@ -356,18 +356,18 @@ sub get_rdeps {
 
 	for my $rdep (@{ $$pinfo{RevDependsList} }) {
 		my $pname = $$rdep{ParentPkg}{Name};
-		my $type = get_type(0 + $$rdep{DepType});
+		my $dtype = get_type(0 + $$rdep{DepType});
 
-		next unless grep(/^$type$/, @rdtypes);
+		next unless grep(/^$dtype$/, @rdtypes);
 		next if ($parent && $pname eq $parent);
 		next unless check_version($pname, $$rdep{ParentVer}{VerStr});
 		next unless (! $show_installed || is_installed($pname));
 		# As long as we don't show versions for rdeps, avoid duplicates
 		# due to double dependencies; for example, gimp has:
 		#    Depends: libgimp2.0 (>= 2.4.7), libgimp2.0 (< 2.4.7-z)
-		next if grep(/^$pname$/, @{ $rdeps{$type} });
+		next if grep(/^$pname$/, @{ $rdeps{$dtype} });
 
-		push(@{ $rdeps{$type} }, $pname);
+		push(@{ $rdeps{$dtype} }, $pname);
 	}
 
 	return %rdeps;
@@ -460,18 +460,18 @@ sub print_dot_footer {
 }
 
 sub print_dot_OR_header {	
-	my ($type, $OR_name, $has_inst) = @_;
+	my ($atype, $OR_name, $has_inst) = @_;
 
 	printf("\t$OR_name [\n");
 	print("\t\tshape = \"record\"\n");
 	if ($has_inst) {
-		if ($type eq "P") {
+		if ($atype eq "P") {
 			print("\t\tstyle = \"rounded,filled\"\n");
 		} else {
 			print("\t\tstyle = \"filled\"\n");
 		}
 		print("\t\tfillcolor = \"honeydew\"\n");
-	} elsif ($type eq "P") {
+	} elsif ($atype eq "P") {
 		print("\t\tstyle = \"rounded\"\n");
 	}
 	print("\t\tlabel = \""); # no newline
@@ -499,10 +499,10 @@ sub print_dot_OR_main {
 }
 
 sub print_alternatives {
-	my ($type, $OR_name, $OR_has_inst, $OR_pkgs) = @_;
+	my ($atype, $OR_name, $OR_has_inst, $OR_pkgs) = @_;
 
 	my $first = 1;
-	print_dot_OR_header($type, $OR_name, $OR_has_inst);
+	print_dot_OR_header($atype, $OR_name, $OR_has_inst);
 	for my $package (split(/,/,  $OR_pkgs)) {
 		# Is this package also part of an earlier set of alternatives?
 		my $seen = 0;
@@ -510,7 +510,7 @@ sub print_alternatives {
 			$seen = 1;
 		} else {
 			my $t_or = first_set_with_package($package, \%OR_dep_list);
-			if ($type eq "D") {
+			if ($atype eq "D") {
 				if (exists $clist{$package}{end} ||
 				    exists $pstatus{$package}{ended}) {
 					$seen = 2;
@@ -617,12 +617,12 @@ sub print_dot_dependency {
 
 sub print_rdeps_provides {
 	my $rdep = shift;
-	my $type = shift;
+	my $dtype = shift;
 	my $package = shift;
 	my @pset = @_;
 
 	if (! exists $pstatus{$rdep}{prov_rdeps}) {
-		debug(4, "Provider rdeps: $rdep - $type - $package - @pset");
+		debug(4, "Provider rdeps: $rdep - $dtype - $package - @pset");
 	} else {
 		debug(4, "Provider rdeps: $rdep is already done");
 		return 1
@@ -631,7 +631,7 @@ sub print_rdeps_provides {
 
 	my $regex = join("|", @pset);
 	my $pinfo = get_apt_pinfo($rdep, "");
-	my $deps = get_apt_deps($pinfo, full_type($type));
+	my $deps = get_apt_deps($pinfo, full_type($dtype));
 	for my $dep_or (split(/,/, $deps)) {
 		next unless $dep_or =~ /(^|\|)($regex)([| ]|$)/;
 
@@ -662,7 +662,7 @@ sub print_rdeps_provides {
 			printf("\t\"$pdep_set_name\" [shape=circle,label=or];\n");
 			$pdep_set_list{$pdep_set_name}{plist} = join(",", @dset);
 		}
-		print_dot_dependency($rdep, "", "", $pdep_set_name, $type, "", "");
+		print_dot_dependency($rdep, "", "", $pdep_set_name, $dtype, "", "");
 	}
 	return 1
 }
@@ -810,22 +810,22 @@ sub pre_process_deps {
 	my $prevdep_OR_name = shift;
 	my $pinfo = shift;
 
-	my $type = "";
+	my $dtype = "";
 	my $delim = "";
 	my $deps = "";
 
 	return unless exists $$pinfo{DependsList};
 	for my $dep (@{ $$pinfo{DependsList} }) {
 		my $new_type = get_type(0 + $$dep{DepType});
-		if ($new_type ne $type) {
+		if ($new_type ne $dtype) {
 			if ($deps) {
-				process_deps($level, $package, $deps, short_type($type), $prevdep_OR_name);
+				process_deps($level, $package, $deps, short_type($dtype), $prevdep_OR_name);
 				$delim = "";
 				$deps = "";
 			}
-			$type = $new_type;
+			$dtype = $new_type;
 		}
-		next unless grep(/^$type$/, @dtypes);
+		next unless grep(/^$dtype$/, @dtypes);
 		if ($deps) {
 			$deps .= $delim;
 		}
@@ -837,7 +837,7 @@ sub pre_process_deps {
 	}
 	# Ensure the dependency type encountered last also gets processed
 	if ($deps) {
-		process_deps($level, $package, $deps, short_type($type), $prevdep_OR_name);
+		process_deps($level, $package, $deps, short_type($dtype), $prevdep_OR_name);
 	}
 }
 
@@ -846,17 +846,17 @@ sub pre_process_bdeps {
 
 	if ($ARCH eq "all") {
 		# $pinfo contains output from apt-cache (see get_bdeps_all)
-		for my $type (qw/Build-Depends Build-Depends-Indep/) {
-			my ($deps) = $pinfo =~ /^$type: (.*)/;
+		for my $dtype (qw/Build-Depends Build-Depends-Indep/) {
+			my ($deps) = $pinfo =~ /^$dtype: (.*)/;
 			next unless $deps;
-			process_deps($level, $package, $deps, short_type($type), "");
+			process_deps($level, $package, $deps, short_type($dtype), "");
 		}
 	} else {
 		# $pinfo is a pointer to AptPkg data
 		return unless exists $$pinfo{BuildDepends};
-		for my $type (keys %{ $$pinfo{BuildDepends} }) {
+		for my $dtype (keys %{ $$pinfo{BuildDepends} }) {
 			my $deps = "";
-			for my $dep (@{ $$pinfo{BuildDepends}{$type} }) {
+			for my $dep (@{ $$pinfo{BuildDepends}{$dtype} }) {
 				if ($deps) {
 					$deps .= ",";
 				}
@@ -865,7 +865,7 @@ sub pre_process_bdeps {
 					$deps .= " (@$dep[1] @$dep[2])"
 				}
 			}
-			process_deps($level, $package, $deps, short_type($type), "");
+			process_deps($level, $package, $deps, short_type($dtype), "");
 		}
 	}
 }
@@ -1003,9 +1003,9 @@ sub find_rdeps {
 
 	my @recurse_rdeps;
 	my %rdeps = get_rdeps($package, $parent);
-	for my $type (sort keys %rdeps) {
-		my $stype = short_type($type);
-		my @rdeps = @{ $rdeps{$type} };
+	for my $dtype (sort keys %rdeps) {
+		my $stype = short_type($dtype);
+		my @rdeps = @{ $rdeps{$dtype} };
 		my $cnt = @rdeps;
 		if ($cnt > 0) {
 			debug(4, "$level - " . ($show_installed ? "installed " : "") . "$stype rdeps for '$package' ($cnt): @rdeps");
