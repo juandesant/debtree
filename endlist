@@ -72,8 +72,11 @@ postgresql postgresql-client
 
 # X.Org
 x11-common
+x11-utils
 xfonts-base xfonts-utils
 xbase-clients
+xserver-xorg
+xserver-xorg-video-all xserver-xorg-input-all
 xutils
 
 # Common desktop
