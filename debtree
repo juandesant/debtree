@@ -232,32 +232,6 @@ sub get_type {
 	return "Unsupported";
 }
 
-sub full_type {
-	my $dtype = shift;
-
-	return "PreDepends" if ($dtype eq "PD");
-	return "Depends" if ($dtype eq "D");
-	return "Recommends" if ($dtype eq "R");
-	return "Suggests" if ($dtype eq "S");
-	return "Conflicts" if ($dtype eq "C");
-	return "Build-Depends" if ($dtype eq "B");
-	return "Build-Depends-Indep" if ($dtype eq "BI");
-	error("full_type: unrecognized dependency type '$dtype'");
-}
-
-sub short_type {
-	my $dtype = shift;
-
-	return "PD" if ($dtype eq "PreDepends");
-	return "D" if ($dtype eq "Depends");
-	return "R" if ($dtype eq "Recommends");
-	return "S" if ($dtype eq "Suggests");
-	return "C" if ($dtype eq "Conflicts");
-	return "B" if ($dtype eq "Build-Depends");
-	return "BI" if ($dtype eq "Build-Depends-Indep");
-	error("short_type: unrecognized dependency type '$dtype'");
-}
-
 sub import_list {
 	my ($file, $ltype) = @_;
 
@@ -550,7 +524,7 @@ sub print_dot_dependency {
 	my $OR_name = shift;
 	my $prevdep_OR_name = shift;
 	my $dep_package = shift;
-	my $dep_type = shift;
+	my $dtype = shift;
 	my $pkgdep = shift;
 	my $rdep = shift;
 	my ($opts, $verdep, $arch_cond, $p_package, $p_dep_package, $prior_OR_dep);
@@ -562,21 +536,21 @@ sub print_dot_dependency {
 		return
 	}
 
-	# No extra options if $dep_type = R
-	$opts = cjoin($opts, ",", "color=purple,style=bold") if ($dep_type eq "PD");
-	$opts = cjoin($opts, ",", "color=blue") if ($dep_type eq "D");
-	$opts = cjoin($opts, ",", "style=dotted") if ($dep_type eq "S");
-	$opts = cjoin($opts, ",", "color=red") if ($dep_type eq "C");
-	$opts = cjoin($opts, ",", "color=darkgoldenrod,style=bold") if ($dep_type eq "B");
-	$opts = cjoin($opts, ",", "color=goldenrod") if ($dep_type eq "BI");
+	# No extra options if $dtype = Recommends
+	$opts = cjoin($opts, ",", "color=purple,style=bold") if ($dtype eq "PreDepends");
+	$opts = cjoin($opts, ",", "color=blue") if ($dtype eq "Depends");
+	$opts = cjoin($opts, ",", "style=dotted") if ($dtype eq "Suggests");
+	$opts = cjoin($opts, ",", "color=red") if ($dtype eq "Conflicts");
+	$opts = cjoin($opts, ",", "color=darkgoldenrod,style=bold") if ($dtype eq "Build-Depends");
+	$opts = cjoin($opts, ",", "color=goldenrod") if ($dtype eq "Build-Depends-Indep");
 
 	if ($pkgdep) {
 		($verdep) = $pkgdep =~ /(\(.*\))/;
 		($arch_cond) = $pkgdep =~ /(\[.*\])/;
 		# Always include versions for versioned conflicts
-		if ($verdep && ($with_versions || $dep_type eq "C")) {
+		if ($verdep && ($with_versions || $dtype eq "Conflicts")) {
 			$opts = cjoin($opts, ",", "label=\"$verdep" . ($arch_cond ? "\\n$arch_cond" : "") . "\"");
-		} elsif ($arch_cond && ($dep_type eq "B" || $dep_type eq "BI")) {
+		} elsif ($arch_cond && $dtype =~ /Build-Depends/) {
 			$opts = cjoin($opts, ",", "label=\"$verdep\"");
 		}
 	}
@@ -607,8 +581,8 @@ sub print_dot_dependency {
 	if (exists $clist{$dep_package}{end} && ! $rdep &&
 	    ! $OR_name && ! $prior_OR_dep &&
 	    ! exists $pstatus{$dep_package}{done}) {
-		if ($dep_type ne "C") {
-			debug(4, "Adding '$dep_package' ($dep_type) to ended (list)");
+		if ($dtype ne "Conflicts") {
+			debug(4, "Adding '$dep_package' ($dtype) to ended (list)");
 			$pstatus{$dep_package}{ended} = 1;
 		}
 		$pstatus{$dep_package}{done} = 1;
@@ -631,7 +605,7 @@ sub print_rdeps_provides {
 
 	my $regex = join("|", @pset);
 	my $pinfo = get_apt_pinfo($rdep, "");
-	my $deps = get_apt_deps($pinfo, full_type($dtype));
+	my $deps = get_apt_deps($pinfo, $dtype);
 	for my $dep_or (split(/,/, $deps)) {
 		next unless $dep_or =~ /(^|\|)($regex)([| ]|$)/;
 
@@ -671,11 +645,11 @@ sub process_deps {
 	my $level = shift;
 	my $package = shift;
 	my $deps = shift;
-	my $dep_type = shift;
+	my $dtype = shift;
 	my $prevdep_OR_name = shift;
 
 	return if ($max_depth == 0);
-	debug(3, "$level - dependencies for '$package' ($dep_type): $deps");
+	debug(3, "$level - dependencies for '$package' ($dtype): $deps");
 
 	for my $dep (split(/,/, $deps)) {
 		my $OR_name;
@@ -767,11 +741,11 @@ sub process_deps {
 			if (exists $clist{$dep_package}{skip}) {
 				$pstatus{$dep_package}{skipped} = 1;
 				next;
-			} elsif ($dep_type eq "C" && ! $with_vconflicts && $pkgdep) {
+			} elsif ($dtype eq "Conflicts" && ! $with_vconflicts && $pkgdep) {
 				# Include only unversioned conflicts
 				next;
 			}
-			print_dot_dependency($package, $OR_name, $prevdep_OR_name, $dep_package, $dep_type, $pkgdep);
+			print_dot_dependency($package, $OR_name, $prevdep_OR_name, $dep_package, $dtype, $pkgdep);
 
 			if (exists $pstatus{$dep_package}{done} ||
 			    exists $clist{$dep_package}{end}) {
@@ -779,13 +753,13 @@ sub process_deps {
 			} else {
 				# Recurse through dependencies, except for Suggests
 				# and Conflicts
-				if ($dep_type eq "S") {
+				if ($dtype eq "Suggests") {
 					if (! exists $pstatus{$dep_package}{done}) {
-						debug(4, "Adding '$dep_package' ($dep_type) to ended");
+						debug(4, "Adding '$dep_package' ($dtype) to ended");
 						$pstatus{$dep_package}{ended} = 1;
 						$pstatus{$dep_package}{leaf} = 1;
 					}
-				} elsif ($dep_type eq "C") {
+				} elsif ($dtype eq "Conflicts") {
 					if (! exists $pstatus{$dep_package}{done}) {
 						$pstatus{$dep_package}{leaf} = 1;
 					}
@@ -793,7 +767,7 @@ sub process_deps {
 					if ($level < $max_depth) {
 						process_package($level + 1, $dep_package, $OR_name, "");
 					} else {
-						debug(4, "Adding '$dep_package' ($dep_type) to ended (max)");
+						debug(4, "Adding '$dep_package' ($dtype) to ended (max)");
 						$pstatus{$dep_package}{ended} = 1;
 					}
 				}
@@ -819,7 +793,7 @@ sub pre_process_deps {
 		my $new_type = get_type(0 + $$dep{DepType});
 		if ($new_type ne $dtype) {
 			if ($deps) {
-				process_deps($level, $package, $deps, short_type($dtype), $prevdep_OR_name);
+				process_deps($level, $package, $deps, $dtype, $prevdep_OR_name);
 				$delim = "";
 				$deps = "";
 			}
@@ -837,7 +811,7 @@ sub pre_process_deps {
 	}
 	# Ensure the dependency type encountered last also gets processed
 	if ($deps) {
-		process_deps($level, $package, $deps, short_type($dtype), $prevdep_OR_name);
+		process_deps($level, $package, $deps, $dtype, $prevdep_OR_name);
 	}
 }
 
@@ -849,7 +823,7 @@ sub pre_process_bdeps {
 		for my $dtype (qw/Build-Depends Build-Depends-Indep/) {
 			my ($deps) = $pinfo =~ /^$dtype: (.*)/;
 			next unless $deps;
-			process_deps($level, $package, $deps, short_type($dtype), "");
+			process_deps($level, $package, $deps, $dtype, "");
 		}
 	} else {
 		# $pinfo is a pointer to AptPkg data
@@ -865,7 +839,7 @@ sub pre_process_bdeps {
 					$deps .= " (@$dep[1] @$dep[2])"
 				}
 			}
-			process_deps($level, $package, $deps, short_type($dtype), "");
+			process_deps($level, $package, $deps, $dtype, "");
 		}
 	}
 }
@@ -1004,19 +978,18 @@ sub find_rdeps {
 	my @recurse_rdeps;
 	my %rdeps = get_rdeps($package, $parent);
 	for my $dtype (sort keys %rdeps) {
-		my $stype = short_type($dtype);
 		my @rdeps = @{ $rdeps{$dtype} };
 		my $cnt = @rdeps;
 		if ($cnt > 0) {
-			debug(4, "$level - " . ($show_installed ? "installed " : "") . "$stype rdeps for '$package' ($cnt): @rdeps");
+			debug(4, "$level - " . ($show_installed ? "installed " : "") . "$dtype rdeps for '$package' ($cnt): @rdeps");
 		}
 
 		my $opts;
 		if ($level < -1 && $cnt > $max_rdeps) {
-			$opts = "color=purple,style=bold" if ($stype eq "PD");
-			$opts = "color=blue" if ($stype eq "D");
-			$opts = "" if ($stype eq "R");
-			$opts = " [label=\"-$cnt-\",$opts]"; # FIXME if stype=R ?
+			$opts = "color=purple,style=bold" if ($dtype eq "PreDepends");
+			$opts = "color=blue" if ($dtype eq "Depends");
+			$opts = "" if ($dtype eq "Recommends");
+			$opts = " [label=\"-$cnt-\",$opts]"; # FIXME if dtype=Recommends ?
 			printf("\t\"RD_$package\" -> \"$package\" $opts;\n");
 			$has_max = 1;
 			next;
@@ -1025,13 +998,13 @@ sub find_rdeps {
 		push(@recurse_rdeps, @rdeps);
 		for my $rdep (@rdeps) {
 			if (@provides && 
-			   print_rdeps_provides($rdep, $stype, $package, ($parent,@provides))) {
+			   print_rdeps_provides($rdep, $dtype, $package, ($parent, @provides))) {
 				next;
 			}
 
 			if (! exists $pstatus{$rdep}{done}) {
 				debug(4, "$level - adding reverse dependency '$rdep'->'$package'");
-				print_dot_dependency($rdep, "", "", $package, $stype, "", 1);
+				print_dot_dependency($rdep, "", "", $package, $dtype, "", 1);
 			} else {
 				debug(4, "$level - package '$rdep' is already done");
 			}
