@@ -1069,10 +1069,10 @@ sub process_package {
 		}
 	}
 
-	return if ($ptype eq "L" || $ptype eq "V");
-
 	# Mark as done now to prevent recursion loops
 	$pstatus{$package}{done} = 1;
+
+	return if ($ptype eq "L" || $ptype eq "V");
 
 	# Recurse through dependencies
 	if ($pinfo) {
