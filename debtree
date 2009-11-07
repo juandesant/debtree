@@ -265,13 +265,15 @@ sub get_apt_pinfo {
 	if ($ptype eq "S") {
 		my $pinfo = $source->get($package);
 		return unless $pinfo;
-		return pop(@$pinfo);
+		# First in array is highest version
+		return shift(@$pinfo);
 	} else {
 		my $pinfo = $cache->get($package);
 		return unless $pinfo;
 		if (exists $$pinfo{CurrentVer}) {
 			return $$pinfo{CurrentVer};
 		} elsif (exists $$pinfo{VersionList}) {
+			# First in array is highest version
 			return shift(@{ $$pinfo{VersionList} });
 		}
 	}
