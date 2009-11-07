@@ -272,7 +272,7 @@ sub get_apt_pinfo {
 		if (exists $$pinfo{CurrentVer}) {
 			return $$pinfo{CurrentVer};
 		} elsif (exists $$pinfo{VersionList}) {
-			return pop(@{ $$pinfo{VersionList} });
+			return shift(@{ $$pinfo{VersionList} });
 		}
 	}
 }
