@@ -78,6 +78,12 @@ Packages that are listed as dependency, but that are unknown in the package
 database will be displayed with a reddish shade. In the case of alternative
 dependencies, the package name will be shown between question marks: `?...?'.
 
+.SS Package versions
+If multiple versions of a package are available, the dependency information
+for the highest available version will be used, with one exception. If the
+\-\-show\-installed option is used, the installed version will be used for
+packages that are installed on the system.
+
 .SS Managing graph size and complexity
 \fBdebtree\fP offers several mechanisms to help reduce the size of dependency
 graphs of packages with large or complex dependency trees. The first mechanism
