@@ -1051,6 +1051,9 @@ sub process_package {
 		$pinfo = get_bdeps_all($package);
 	} else {
 		$pinfo = get_apt_pinfo($package, $ptype);
+		info(3, "Using package version: " .
+			(($ptype eq "S") ? $$pinfo{Version} : $$pinfo{VerStr}))
+			if $pinfo;
 	}
 	if ($ptype eq "S" || $ptype eq "B") {
 		if ($pinfo) { 
