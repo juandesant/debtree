@@ -1,6 +1,8 @@
 debtree (1.0.4) UNRELEASED; urgency=low
 
   * Take the highest available version for source packages as well.
+  * Only use the installed version of a package if the --show-installed option
+    is active; otherwise always use the highest available version.
 
  -- Frans Pop <fjp@debian.org>  Sat, 07 Nov 2009 12:33:31 +0100
 

@@ -270,7 +270,7 @@ sub get_apt_pinfo {
 	} else {
 		my $pdata = $cache->get($package);
 		return unless $pdata;
-		if (exists $$pdata{CurrentVer}) {
+		if ($show_installed && exists $$pdata{CurrentVer}) {
 			return $$pdata{CurrentVer};
 		} elsif (exists $$pdata{VersionList}) {
 			# First in array is highest version
