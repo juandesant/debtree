@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Frans Pop <fjp@debian.org>
 Build-Depends: debhelper (>= 7)
 Standards-Version: 3.8.3
-Homepage: http://alioth.debian.org/~fjp/debtree/
+Homepage: http://collab-maint.alioth.debian.org/debtree/
 Vcs-Git: git://git.debian.org/collab-maint/debtree.git
 Vcs-Browser: http://git.debian.org/?p=collab-maint/debtree.git
 
