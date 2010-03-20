@@ -1,6 +1,8 @@
 debtree (1.0.6) UNRELEASED; urgency=low
 
   * Fix typos in man page; thanks to A. Costa for the patch. Closes: #573818.
+  * Disable pattern meta characters for package names in regular expressions.
+    Closes: #574647.
 
  -- Frans Pop <fjp@debian.org>  Sun, 14 Mar 2010 15:00:18 +0100
 

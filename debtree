@@ -374,7 +374,7 @@ sub set_name {
 sub first_set_with_package {
 	my ($package, $set) = @_;
 	foreach my $s (sort keys %$set) {
-		if ($$set{$s}{plist} =~ /(^|,)$package(,|$)/) {
+		if ($$set{$s}{plist} =~ /(^|,)\Q$package\E(,|$)/) {
 			return $s;
 		}
 	}
@@ -534,7 +534,7 @@ sub print_dot_dependency {
 	# Second or later dependency in alternatives: skip unless versioned (see also below)
 	# TODO: make this work better if only some of the alternatives have versioned deps
 	if ($OR_name && (! $with_versions || ! $pkgdep) &&
-	    $OR_dep_list{$OR_name}{plist} =~ /,$dep_package(,|$)/) {
+	    $OR_dep_list{$OR_name}{plist} =~ /,\Q$dep_package\E(,|$)/) {
 		return
 	}
 
@@ -605,11 +605,11 @@ sub print_rdeps_provides {
 	}
 	$pstatus{$rdep}{prov_rdeps} = 1;
 
-	my $regex = join("|", @pset);
 	my $pinfo = get_apt_pinfo($rdep, "");
 	my $deps = get_apt_deps($pinfo, $dtype);
+	my $regex = "(\Q" . join("\E|\Q", @pset) . "\E)";
 	for my $dep_or (split(/,/, $deps)) {
-		next unless $dep_or =~ /(^|\|)($regex)([| ]|$)/;
+		next unless $dep_or =~ /(^|\|)$regex([| ]|$)/;
 
 		my @dset;
 		my $cnt = 0;
