@@ -58,6 +58,8 @@ my $show_all = 0;
 my $do_rotate = 0;
 my $do_condense = 0;
 my $ARCH="";
+my $download_size=0;
+my $total_size=0;
 
 # Hash containing skip and end packages read from config files
 my %clist;
@@ -1038,8 +1040,32 @@ sub process_package {
 	my $prevdep_OR_name = shift;
 	my $ptype = shift;
 	my $pinfo;
+	my $pdata = $cache->get($package);
+	my $size=0;
 
 	info(2, "Level $level: processing $package" . ($ptype ? " ($ptype)" : ""));
+
+	# something installed?
+	if (exists $$pdata{CurrentVer}) {
+		$size=$pdata->{CurrentVer}->{InstalledSize};
+		$total_size += $size;
+		$size=$pdata->{CurrentVer}->{Size};
+		$download_size += $size;
+		info (2,"size of $package: $size / total size: $total_size / download size: $download_size");
+	}else {
+		# is there a list of versions available in cache?
+		if (exists $$pdata{VersionList}) {
+			# just use first version
+			my $first_version=shift(@{ $$pdata{VersionList} });
+			$size=$first_version->{InstalledSize};
+			$total_size += $size;
+			$size=$first_version->{Size};
+			$download_size += $size;
+			info (2,"size of first $package: $size / total size: $total_size / download site: $download_size");
+               } else {
+			info (2,"no size available: $package");
+               }
+	}
 
 	if ($ptype ne "L" && exists $pstatus{$package}{ended}) {
 		debug(4, "Removing '$package' from ended");
@@ -1182,3 +1208,9 @@ for my $package (sort keys %pstatus) {
 }
 
 print_dot_footer();
+
+# does it make sense to show these numbers for rdeps?
+if (! $show_rdeps) {
+	printf("// total size of all shown packages: $total_size\n");
+	printf("// download size of all shown packages: $download_size\n");
+}
