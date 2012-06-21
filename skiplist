@@ -16,6 +16,7 @@ libgcc1
 libstdc++6
 zlib1g
 libx11-6
+multiarch-support
 
 # Extremely basic development libraries
 libc-dev
