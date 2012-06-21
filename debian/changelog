@@ -1,3 +1,11 @@
+debtree (1.0.8) unstable; urgency=low
+
+  * Fix typo in debtree.1
+    Patch by Jonas Genannt
+    Closes: #650431
+
+ -- Anibal Monsalve Salazar <anibal@debian.org>  Wed, 30 Nov 2011 09:43:38 +1100
+
 debtree (1.0.7) unstable; urgency=low
 
   * Add python2.6 and python2.7 to endlist
