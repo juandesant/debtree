@@ -1,3 +1,15 @@
+debtree (1.0.7) unstable; urgency=low
+
+  * Add python2.6 and python2.7 to endlist
+    Patch by Jakub Wilk
+    Closes: #616173
+  * Fix out-of-date-standards-version
+  * Fix maintainer-script-without-set-e
+  * Fix debhelper-overrides-need-versioned-build-depends
+  * Debian source format is 3.0 (native)
+
+ -- Anibal Monsalve Salazar <anibal@debian.org>  Sun, 17 Apr 2011 09:42:13 +1000
+
 debtree (1.0.6) unstable; urgency=low
 
   [ Frans Pop ]

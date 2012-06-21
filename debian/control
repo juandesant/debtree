@@ -2,8 +2,8 @@ Source: debtree
 Section: utils
 Priority: optional
 Maintainer: Anibal Monsalve Salazar <anibal@debian.org>
-Build-Depends: debhelper (>= 7)
-Standards-Version: 3.8.4
+Build-Depends: debhelper (>= 7.0.50~)
+Standards-Version: 3.9.2
 Homepage: http://collab-maint.alioth.debian.org/debtree/
 Vcs-Git: git://git.debian.org/collab-maint/debtree.git
 Vcs-Browser: http://git.debian.org/?p=collab-maint/debtree.git

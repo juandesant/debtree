@@ -1,4 +1,6 @@
-#! /bin/sh -e
+#! /bin/sh
+
+set -e
 
 CONFSRC="/usr/share/debtree"
 CONFDEST="/etc/debtree"
