@@ -25,7 +25,7 @@ gettext
 # Perl/Python
 perl
 python python-minimal
-python2.4 python2.5
+python2.4 python2.5 python2.6 python2.7
 
 # Basic Debian packages & package management
 dpkg

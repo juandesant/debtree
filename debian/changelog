@@ -1,3 +1,15 @@
+debtree (1.0.10) unstable; urgency=low
+
+  [ Thorsten Alteholz ]
+  * [6781a55f] show the size of all packages that depend on a given package
+
+  [ Anibal Monsalve Salazar ]
+  * [f2b58fdf] Add multiarch-support to skiplist
+    Thanks to Fabian Greffrath for the suggestion
+    Closes: #659223
+
+ -- Anibal Monsalve Salazar <anibal@debian.org>  Fri, 22 Jun 2012 09:17:00 +1000
+
 debtree (1.0.9) unstable; urgency=low
 
   * Really fix typo in debtree.1
