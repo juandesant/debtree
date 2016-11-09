@@ -1,11 +1,12 @@
-debtree (1.0.10+nmu1) UNRELEASED; urgency=medium
+debtree (1.0.10+nmu1) unstable; urgency=medium
 
+  * Non-maintainer upload.
   * Remove override_dh_builddeb to no more build with deprecated bzip2
     compression. (Closes: #833242)
   * Guard …."\E" with "no warnings qw(misc);" (Closes: #823279)
   * Fix typo in man page found by lintian.
 
- -- Axel Beckert <abe@debian.org>  Wed, 09 Nov 2016 00:35:35 +0100
+ -- Axel Beckert <abe@debian.org>  Wed, 09 Nov 2016 01:26:57 +0100
 
 debtree (1.0.10) unstable; urgency=low
 
