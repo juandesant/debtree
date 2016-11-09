@@ -609,7 +609,9 @@ sub print_rdeps_provides {
 
 	my $pinfo = get_apt_pinfo($rdep, "");
 	my $deps = get_apt_deps($pinfo, $dtype);
+	no warnings qw(misc);
 	my $regex = "(\Q" . join("\E|\Q", @pset) . "\E)";
+	use warnings;
 	for my $dep_or (split(/,/, $deps)) {
 		next unless $dep_or =~ /(^|\|)$regex([| ]|$)/;
 
